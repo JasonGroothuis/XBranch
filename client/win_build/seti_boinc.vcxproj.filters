@@ -1,0 +1,349 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{e436ec3d-5633-408d-b643-6f00f0ad21ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{75e76d1a-e059-442d-9aa0-6d3aaf7a68f2}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{debdc7ac-8a4e-42c8-ad4c-ae7243ad5327}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="CUDA Files">
+      <UniqueIdentifier>{b9e993ef-0d4b-4d38-8bb4-4a46ffaf4c1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CUDA Files\CUDA Header Files">
+      <UniqueIdentifier>{208736f7-3e38-47a5-8d77-ce91bdc603af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libraries">
+      <UniqueIdentifier>{2a50f645-7807-4bdd-ba73-a6a0d37bd527}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\amd64fft8g.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\analyzeFuncs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vector\analyzeFuncs_altivec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vector\analyzeFuncs_fpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vector\analyzeFuncs_sse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vector\analyzeFuncs_vector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vector\analyzeFuncs_x86_64.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\analyzePoT.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\analyzeReport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\autocorr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\chirpfft.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\confsettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fft8g.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gaussfit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\gdata.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vector\hires_timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lcgamm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\malloc_a.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\progress.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pulsefind.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\s_util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sah_gfx_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sah_version.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\db\schema_master.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\seti.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\seti_header.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\spike.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\timecvt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\worker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\cuda\cudaAcc_analyzeReport.cpp">
+      <Filter>CUDA Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\cuda\nvapi_device.cpp">
+      <Filter>CUDA Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\analyze.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\analyzeFuncs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vector\analyzeFuncs_vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\analyzePoT.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\analyzeReport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\autocorr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\chirpfft.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\confsettings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\fft8g.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fftw3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\boinc\lib\filesys.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\gaussfit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\gdata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vector\hires_timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lcgamm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\malloc_a.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\progress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pulsefind.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\s_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sah_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sah_gfx_main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\db\schema_master.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\seti.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\seti_header.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vector\sighandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sincos.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\spike.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\db\sqlrow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\boinc\lib\stackwalker_win.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\timecvt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\win-sah_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\win_build\win_version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\worker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vector\x86_float4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vector\x86_ops.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="seti_boinc_private.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cuda\cudaAcc_analyzeReport.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cuda\cudaAcc_data.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cuda\cudaAcc_pulsefind.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cuda\cudaAcc_utilities.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cuda\cudaAcceleration.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cuda\nvapi_device.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cuda\nvapi_types.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="seti_boinc_private.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resource" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuildStep Include="..\cuda\CUFFT\codelets.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="..\cuda\cudaAcc_CleanExit.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="..\cuda\cudaAcc_scan.h">
+      <Filter>CUDA Files\CUDA Header Files</Filter>
+    </CustomBuildStep>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\cuda\cudaAcc_autocorr.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\cuda\cudaAcc_utilities.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\cuda\cudaAcc_transpose.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\cuda\cudaAcc_summax.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\cuda\cudaAcc_pulsefind.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\cuda\cudaAcc_PowerSpectrum.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\cuda\cudaAcc_gaussfit.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\cuda\cudaAcc_fft.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\cuda\cudaAcceleration.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\cuda\cudaAcc_CalcChirpData.cu">
+      <Filter>CUDA Files</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="libs\libboinc_SSE_x64.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\libboincapi_SSE_x64.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\libgraphics2_SSE_x64.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\setiboincdb_SSE_x64.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\libboinc_SSE.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\libboincapi_SSE.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\libgraphics2_SSE.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\setiboincdb_SSE.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\libboinc_SSE_vs2k8.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\libboincapi_SSE_vs2k8.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\libgraphics2_SSE_vs2k8.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+    <Library Include="libs\setiboincdb_SSE_vs2k8.lib">
+      <Filter>Libraries</Filter>
+    </Library>
+  </ItemGroup>
+</Project>

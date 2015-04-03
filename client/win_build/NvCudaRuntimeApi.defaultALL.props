@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup
+    Condition="'$(Cudart_Build_Rule___default_all_BeforeTargets)' == '' and '$(Cudart_Build_Rule___default_all_AfterTargets)' == '' and '$(ConfigurationType)' != 'Makefile'">
+    <Cudart_Build_Rule___default_all_BeforeTargets>Midl</Cudart_Build_Rule___default_all_BeforeTargets>
+    <Cudart_Build_Rule___default_all_AfterTargets>CustomBuild</Cudart_Build_Rule___default_all_AfterTargets>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Cudart_Build_Rule___default_all_DependsOn
+      Condition="'$(ConfigurationType)' != 'Makefile'">_SelectedFiles;$(Cudart_Build_Rule___default_all_DependsOn)</Cudart_Build_Rule___default_all_DependsOn>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <Cudart_Build_Rule___default_all_>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
+      <GenerateRelocatableDeviceCode>false</GenerateRelocatableDeviceCode>
+      <PtxAsOptionV>False</PtxAsOptionV>
+      <Keep>False</Keep>
+      <HostDebugInfo>false</HostDebugInfo>
+      <FastMath>False</FastMath>
+      <TypeInfo>False</TypeInfo>
+      <NvccPath>$(CUDA_PATH_V6_0)\bin\nvcc.exe</NvccPath>
+      <RequiredIncludes>$(CUDA_PATH_V6_0)\include</RequiredIncludes>
+      <CompileOut>$(IntDir)%(Filename)%(Extension).obj</CompileOut>
+      <ExtraNvccOptions>-use_fast_math -gencode arch=compute_10,code=sm_10 -gencode arch=compute_11,code=sm_11 -gencode arch=compute_12,code=sm_12 -gencode arch=compute_13,code=sm_13 -gencode arch=compute_10,code=compute_10</ExtraNvccOptions>
+      <MaxRegCount>32</MaxRegCount>
+      <NvccCompilation>0</NvccCompilation>
+      <CudaRuntime>2</CudaRuntime>
+      <Arch1>0</Arch1>
+      <Arch2>0</Arch2>
+      <Arch3>0</Arch3>
+      <TargetMachinePlatform>0</TargetMachinePlatform>
+      <Warning>3</Warning>
+      <Optimization>2</Optimization>
+      <Runtime>0</Runtime>
+      <RuntimeChecks>0</RuntimeChecks>
+      <CommandLineTemplate> echo [NvccPath] [Keep] [GPUDebugInfo] [GenerateLineInfo] [ExtraNvccOptions] [Arch1] [Arch2] [Arch3] [TargetMachinePlatform] -ccbin "$(VCInstallDir)bin" [HostDebugInfo] [FastMath] [Defines] -Xcompiler "/EHsc [Warning] /nologo [Optimization] /Zi [RuntimeChecks] [Runtime] [TypeInfo] [ExtraCppOptions]" [Include] [RequiredIncludes] [MaxRegCount] [PtxAsOptionV] [GenerateRelocatableDeviceCode] [NvccCompilation] %(Filename)%(Extension) [AdditionalOptions] 
+
+ cd "$(IntDir)" 
+ findstr /L /I "\"[CompileOut]\"" "$(TargetName).device-link.options" &gt;nul 2&gt;&amp;1 
+ IF ERRORLEVEL 1 echo "[CompileOut]"&gt;&gt; "$(TargetName).device-link.options" 
+ cd "$(ProjectDir)" 
+ [NvccPath] [Keep] [GPUDebugInfo] [GenerateLineInfo] [ExtraNvccOptions] [Arch1] [Arch2] [Arch3] [TargetMachinePlatform] -ccbin "$(VCInstallDir)bin" [HostDebugInfo] [FastMath] [Defines] -Xcompiler "/EHsc [Warning] /nologo [Optimization] /Zi [RuntimeChecks] [Runtime] [TypeInfo] [ExtraCppOptions]" [Include] [RequiredIncludes] [MaxRegCount] [ptxasoptionv] [GenerateRelocatableDeviceCode] [NvccCompilation] "%(FullPath)" [AdditionalOptions] </CommandLineTemplate>
+      <Outputs>[CompileOut]</Outputs>
+      <ExecutionDescription>Compiling with CUDA Build Rule...</ExecutionDescription>
+      <AdditionalDependencies>[AddedDependencies]</AdditionalDependencies>
+    </Cudart_Build_Rule___default_all_>
+  </ItemDefinitionGroup>
+</Project>
