@@ -31,7 +31,12 @@
 
 #define DO_SMOOTH
 
-#if defined(__APPLE__) //|| defined(_WIN32) // Duplicate definitions in windows
+#if defined(__linux__)
+#include <cuda_runtime_api.h>
+#include <unistd.h>
+#endif
+
+#if defined(__APPLE__) || defined(__linux__) // Duplicate definitions in windows
   #include "version.h"
   const char *BOINC_PACKAGE_STRING="libboinc: "BOINC_VERSION_STRING;
 //#else
@@ -39,6 +44,7 @@
    #include "config.h"
    const char *BOINC_PACKAGE_STRING="libboinc: "PACKAGE_STRING;
 #endif
+
 
 #undef PACKAGE_STRING
 #undef PACKAGE
@@ -97,6 +103,8 @@ const char *SAH_PACKAGE_STRING=CUSTOM_STRING;
 #elif defined(USE_FFTWF)
 #pragma message ("----FFTW----")
 #include "fftw3.h"
+#elif defined(USE_CUDA)
+#pragma message ("----CUFFT----")
 #else
 #pragma message ("----ooura----")
 #include "fft8g.h"
@@ -327,453 +335,480 @@ int icfft;  // for debug
 #ifdef USE_CUDA
 void initCudaDevice()
 {
-	// Check the commandline args before going attempting to use CUDA
-	if(!bNoCUDA)
+  // Check the commandline args before going attempting to use CUDA
+  if(!bNoCUDA)
+    {
+      int retries = 0;
+      do 
 	{
-		int retries = 0;
-		do {
-			gSetiUseCudaDevice = cudaAcc_initializeDevice(gCUDADevPref, bPollCUDA);
-			if (!gSetiUseCudaDevice) 
-			{
-				retries++;
-				if ( retries < 6 )
-				{
-					fprintf(stderr,"  Cuda device initialisation retry %d of 6, waiting 5 secs...\n",retries); 
-#ifdef _WIN32
-					Sleep(5000);
-#else
-					sleep(5);
-#endif
-				}
-			}
-		} while (!gSetiUseCudaDevice && retries < 6); 
-		if (!gSetiUseCudaDevice)
+	  gSetiUseCudaDevice = cudaAcc_initializeDevice(gCUDADevPref, bPollCUDA);
+	  if (!gSetiUseCudaDevice) 
+	    {
+	      retries++;
+	      if ( retries < 6 )
 		{
- 					fprintf(stderr,"  Cuda initialisation FAILED, Initiating Boinc temporary exit (180 secs)\n"); 
+		  fprintf(stderr,"  Cuda device initialisation retry %d of 6, waiting 5 secs...\n",retries); 
 #ifdef _WIN32
-					fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
-					worker_thread_exit_ack = true; 
+		  Sleep(5000);
+#else
+		  sleep(5);
 #endif
-					boinc_temporary_exit(180,"Cuda device initialisation failed");
 		}
+	    }
+	} while (!gSetiUseCudaDevice && retries < 6); 
+      
+      if (!gSetiUseCudaDevice)
+	{
+	  fprintf(stderr,"  Cuda initialisation FAILED, Initiating Boinc temporary exit (180 secs)\n"); 
+#ifdef _WIN32
+	  fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
+	  worker_thread_exit_ack = true; 
+#endif
+	  boinc_temporary_exit(180,"Cuda device initialisation failed");
 	}
+    }
 }
 #endif //USE_CUDA
 
-int seti_analyze (ANALYSIS_STATE& state) {
-    sah_complex* DataIn = state.savedWUData;
-    int NumDataPoints = state.npoints;
-    sah_complex* ChirpedData = NULL;
-    sah_complex* WorkData = NULL;
-    float* PowerSpectrum = NULL;
-    float* tPowerSpectrum; // Transposed power spectra if used.
-    float* AutoCorrelation = NULL;
 
-	SAFE_EXIT_CHECK;
+
+int seti_analyze (ANALYSIS_STATE& state) 
+{
+  sah_complex* DataIn = state.savedWUData;
+  int NumDataPoints = state.npoints;
+  sah_complex* ChirpedData = NULL;
+  sah_complex* WorkData = NULL;
+  float* PowerSpectrum = NULL;
+  float* tPowerSpectrum; // Transposed power spectra if used.
+  float* AutoCorrelation = NULL;
+  
+  SAFE_EXIT_CHECK;
 #ifdef USE_CUDA
-	initCudaDevice();
-//	// Check the commandline args before going attempting to use CUDA
-//	if(!bNoCUDA)
-//	{
-//		int retries = 0;
-//		do {
-//			gSetiUseCudaDevice = cudaAcc_initializeDevice(gCUDADevPref, bPollCUDA);
-//			if (!gSetiUseCudaDevice) 
-//			{
-//				retries++;
-//				if ( retries < 6 )
-//				{
-//					fprintf(stderr,"  Cuda device initialisation retry %d of 6, waiting 5 secs...\n",retries); 
-//#ifdef _WIN32
-//					Sleep(5000);
-//#else
-//					sleep(5);
-//#endif
-//				}
-//			}
-//		} while (!gSetiUseCudaDevice && retries < 6); 
-//		if (!gSetiUseCudaDevice)
-//		{
-// 					fprintf(stderr,"  Cuda initialisation FAILED, Initiating Boinc temporary exit (180 secs)\n"); 
-//#ifdef _WIN32
-//					fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
-//					worker_thread_exit_ack = true; 
-//#endif
-//					boinc_temporary_exit(180);
-//		}
-//	}
+  initCudaDevice();
+  //	// Check the commandline args before going attempting to use CUDA
+  //	if(!bNoCUDA)
+  //	{
+  //		int retries = 0;
+  //		do {
+  //			gSetiUseCudaDevice = cudaAcc_initializeDevice(gCUDADevPref, bPollCUDA);
+  //			if (!gSetiUseCudaDevice) 
+  //			{
+  //				retries++;
+  //				if ( retries < 6 )
+  //				{
+  //					fprintf(stderr,"  Cuda device initialisation retry %d of 6, waiting 5 secs...\n",retries); 
+  //#ifdef _WIN32
+  //					Sleep(5000);
+  //#else
+  //					sleep(5);
+  //#endif
+  //				}
+  //			}
+  //		} while (!gSetiUseCudaDevice && retries < 6); 
+  //		if (!gSetiUseCudaDevice)
+  //		{
+  // 					fprintf(stderr,"  Cuda initialisation FAILED, Initiating Boinc temporary exit (180 secs)\n"); 
+  //#ifdef _WIN32
+  //					fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
+  //					worker_thread_exit_ack = true; 
+  //#endif
+  //					boinc_temporary_exit(180);
+  //		}
+  //	}
 #endif //USE_CUDA
-
+  
 #ifdef USE_CUDA
-    if(gSetiUseCudaDevice) {
-	    fprintf(stderr,"SETI@home using CUDA accelerated device %s\n", gCudaDevProps.name);
-	SAFE_EXIT_CHECK;
-	#ifdef _WIN32
-		DWORD pr;
-		char *pstr;
-
-		#if CUDART_VERSION >= 3000
-				initConfig(gCudaDevProps.pciBusID,gCudaDevProps.pciDeviceID);
-		#else
-				initConfig(0,0);
-		#endif
-
-		switch (confSetPriority)
-		{
-		case pt_NORMAL:
-			pr = NORMAL_PRIORITY_CLASS;
-			pstr = (char *) &TEXT("NORMAL");
-			break;
-		case pt_ABOVENORMAL:
-			pr = ABOVE_NORMAL_PRIORITY_CLASS;
-			pstr = (char *) &TEXT("ABOVE_NORMAL");
-			break;
-		case pt_HIGH:
-			pr = HIGH_PRIORITY_CLASS;
-			pstr = (char *) &TEXT("HIGH");
-			break;
-		default:
-			pr = BELOW_NORMAL_PRIORITY_CLASS;
-			pstr = (char *) &TEXT("BELOW_NORMAL (default)");
-		}
-		if( !SetPriorityClass( GetCurrentProcess(), pr ) ) {
-			fprintf( stderr, "Failed to set process priority\n" );
-		}else{
-			fprintf(stderr,"Priority of process set to %s successfully\n",pstr);
-		}
-
-		if(!SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_NORMAL)){
-			DWORD error=GetLastError();
-			LPSTR lpBuffer=NULL;
-			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_ALLOCATE_BUFFER,NULL,error,0,lpBuffer,0,NULL);
-
-			fprintf(stderr,"Failed to set worker thread priority: %s\n",lpBuffer);
-		}else{
-			fprintf(stderr,"Priority of worker thread set successfully\n");
-		}
-
-		#ifdef LOCK_PROCESS_TO_SINGLE_CORE
-				if( !LockProcessToCurrentCPU() ) {
-					fprintf( stderr, "SETI@home failed to lock process to current CPU for perf timing\n" );
-				}
-		#endif //LOCK_PROCESS_TO_SINGLE_CORE
-	#else //_WIN32
-		#if CUDART_VERSION >= 3000
-				initConfig(gCudaDevProps.pciBusID,gCudaDevProps.pciDeviceID);
-		#else
-				initConfig(0,0);
-		#endif
-	#endif  //_WIN32
-    }
-    else
-#endif //USE_CUDA
+  if(gSetiUseCudaDevice) 
     {
-        //fprintf(stderr,"SETI@home NOT using CUDA, falling back on host CPU processing\n");
-		fprintf(stderr,"SETI@home NOT using CUDA, initiating Boinc temporary exit (180 secs)...\n");
+      fprintf(stderr,"SETI@home using CUDA accelerated device %s\n", gCudaDevProps.name);
+      SAFE_EXIT_CHECK;
 #ifdef _WIN32
-		fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
-		worker_thread_exit_ack = true; 
-#endif
-		boinc_temporary_exit(180,"Cuda initialisation failure, CPU fallback not supported in this release, temporary exit" );
-    }
-
-    use_transposed_pot= (!notranspose_flag) &&
-        ((app_init_data.host_info.m_nbytes != 0)  &&
-        (app_init_data.host_info.m_nbytes >= (double)(96*1024*1024)));
-    int num_cfft                  = 0;
-    float chirprate;
-    int last_chirp_ind = - 1 << 20, chirprateind;
-
-    double cputime0=0; //progress_diff, progress_in_cfft,
-    int retval=0;
-
-    if (swi.analysis_cfg.credit_rate != 0) LOAD_STORE_ADJUSTMENT=swi.analysis_cfg.credit_rate;
-
-#ifndef DEBUG
-    int icfft;
-#endif
-    int NumFfts, ifft, fftlen;
-    int CurrentSub;
-    int FftNum, need_transpose;
-    unsigned long bitfield=swi.analysis_cfg.analysis_fft_lengths;
-    unsigned long FftLen;
-    unsigned long ac_fft_len=swi.analysis_cfg.autocorr_fftlen;
-#ifdef USE_IPP
-    IppsFFTSpec_C_32fc* FftSpec[MAX_NUM_FFTS];
-    int BufSize;
-
-    ippStaticInit();   // initialization of IPP library
-#elif defined(USE_FFTWF)
-    // plan space for fftw
-    fftwf_plan analysis_plans[MAX_NUM_FFTS];
-    fftwf_plan autocorr_plan;
+      DWORD pr;
+      char *pstr;
+      
+#if CUDART_VERSION >= 3000
+      initConfig(gCudaDevProps.pciBusID,gCudaDevProps.pciDeviceID);
 #else
-    // fields need by the ooura fft logic
-    //int * BitRevTab[MAX_NUM_FFTS];
-//	int * BitRevTab_ac;
-    //float * CoeffTab[MAX_NUM_FFTS];
-//	float * CoeffTab_ac;
+      initConfig(0,0);
 #endif
-
-    // Allocate data array and work area arrays.
-
-    ChirpedData = state.data;
-    PowerSpectrum = (float*) calloc_a(NumDataPoints, sizeof(float), MEM_ALIGN);
-    if (PowerSpectrum == NULL) SETIERROR(MALLOC_FAILED, "PowerSpectrum == NULL");
-    if (use_transposed_pot) {
-        tPowerSpectrum = (float*) calloc_a(NumDataPoints, sizeof(float), MEM_ALIGN);
-        if (tPowerSpectrum == NULL) SETIERROR(MALLOC_FAILED, "tPowerSpectrum == NULL");
-    } else {
-        tPowerSpectrum=PowerSpectrum;
-    }
-    AutoCorrelation = (float*)calloc_a(ac_fft_len, sizeof(float), MEM_ALIGN);
-    if (AutoCorrelation == NULL) SETIERROR(MALLOC_FAILED, "AutoCorrelation == NULL");
-
-    // boinc_worker_timer();
-    FftNum=0;
-    FftLen=1;
-
-#ifdef USE_FFTWF
-    FILE *wisdom;
-	if (!gSetiUseCudaDevice) {
-		if (wisdom=boinc_fopen("wisdom.sah","r")) {
-			char *wiz=(char *)calloc_a(1024,64,MEM_ALIGN);
-			int n=0;
-			while (wiz && n<64*1024 && !feof(wisdom)) { n+=(int)fread(wiz+n,1,80,wisdom); }
-			fftwf_import_wisdom_from_string(wiz);
-			free_a(wiz);
-			fclose(wisdom);
-		}
-	}
-#endif
-
-#ifdef BOINC_APP_GRAPHICS
-    if (!nographics()) strcpy(sah_graphics->status, "Generating FFT Coefficients");
-#endif
-
-#if  defined(USE_CUDA)
-	extern int cufftplans_done;
-	int cfftplans_failcount = 0;
-	int cfftplans_sucesscount = 0;
-#endif
-
-    while (bitfield != 0) {
-        if (bitfield & 1) {
-            swi.analysis_fft_lengths[FftNum]=FftLen;
-#if defined(USE_IPP)
-            int order = 0;
-            for (int tmp = FftLen; !(tmp & 1); order++) tmp >>= 1;
-            if (ippsFFTInitAlloc_C_32fc(&FftSpec[FftNum], order,
-                IPP_FFT_NODIV_BY_ANY, ippAlgHintFast)) {
-                    SETIERROR (MALLOC_FAILED, "ippsFFTInitAlloc failed");
-            }
-#elif defined(USE_FFTWF)
-			sah_complex *scratch;
-		 if (1) //!gSetiUseCudaDevice)
-		 {
-            WorkData = (sah_complex *)malloc_a(FftLen * sizeof(sah_complex),MEM_ALIGN);
-            scratch=(sah_complex *)malloc_a(FftLen*sizeof(sah_complex),MEM_ALIGN);
-            if ((WorkData == NULL) || (scratch==NULL)) {
-                SETIERROR(MALLOC_FAILED, "WorkData == NULL || scratch == NULL");
-            }
-		 }
-#else
-            // See docs in fft8g.C for sizing guidelines for BitRevTab and CoeffTab.
-            //BitRevTab[FftNum] = (int*) calloc_a(3+(int)sqrt((float)swi.analysis_fft_lengths[FftNum]), sizeof(int), MEM_ALIGN);
-            //if (BitRevTab[FftNum] == NULL)  SETIERROR(MALLOC_FAILED, "BitRevTab[FftNum] == NULL");
-            //BitRevTab[FftNum][0] = 0;
-//			BitRevTab_ac = (int*) calloc_a(3+(int)sqrt((float)swi.analysis_cfg.autocorr_fftlen), sizeof(int), MEM_ALIGN);
-//            if (BitRevTab_ac == NULL)  SETIERROR(MALLOC_FAILED, "BitRevTab_ac == NULL");
-//            BitRevTab_ac[0] = 0;
-#endif
-
-#if defined(USE_FFTWF)
-  		if (1) //!gSetiUseCudaDevice) 
-		{
-            analysis_plans[FftNum] = fftwf_plan_dft_1d(FftLen, scratch, WorkData, FFTW_BACKWARD, FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
-		}
-#endif 
-            FftNum++;
-#ifdef USE_FFTWF
-		if (1) //!gSetiUseCudaDevice) 
-		{
-            free_a(scratch);
-            free_a(WorkData);
-		}
-#endif /* USE_FFTWF */
-
-        }
-        FftLen*=2;
-        bitfield>>=1;
-    }
-
-#if 0 //def USE_CUDA
-	if (cfftplans_failcount) fprintf(stderr,"%d early cuFft plans failed\n",cfftplans_failcount);  // there were failures & we fell back to CPU
-	else if (gSetiUseCudaDevice && !cfftplans_sucesscount) // All Plans postponed (no successes or failures)
+      
+      switch (confSetPriority)
 	{
-		fprintf(stderr,"Cuda Active: Plenty of total Global VRAM (>300MiB).\n All early cuFft plans postponed, to parallel with first chirp.\n");
-	} else {  //no failures, possibly some successes.  Device could be active o
-		if (gSetiUseCudaDevice) { fprintf(stderr,"Cuda Active: All %d paranoid early cuFft plans succeeded.\n",cfftplans_sucesscount); cufftplans_done++;}
-		else { fprintf(stderr,"Cuda inactive:  Established %d cuFft plans.\n",cfftplans_sucesscount); }
+	case pt_NORMAL:
+	  pr = NORMAL_PRIORITY_CLASS;
+	  pstr = (char *) &TEXT("NORMAL");
+	  break;
+	case pt_ABOVENORMAL:
+	  pr = ABOVE_NORMAL_PRIORITY_CLASS;
+	  pstr = (char *) &TEXT("ABOVE_NORMAL");
+	  break;
+	case pt_HIGH:
+	  pr = HIGH_PRIORITY_CLASS;
+	  pstr = (char *) &TEXT("HIGH");
+	  break;
+	default:
+	  pr = BELOW_NORMAL_PRIORITY_CLASS;
+	  pstr = (char *) &TEXT("BELOW_NORMAL (default)");
 	}
+      if( !SetPriorityClass( GetCurrentProcess(), pr ) ) 
+	{
+	  fprintf( stderr, "Failed to set process priority\n" );
+	}
+      else
+	{
+	  fprintf(stderr,"Priority of process set to %s successfully\n",pstr);
+	}
+      
+      if(!SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_NORMAL))
+	{
+	  DWORD error=GetLastError();
+	  LPSTR lpBuffer=NULL;
+	  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_ALLOCATE_BUFFER,NULL,error,0,lpBuffer,0,NULL);
+	  
+	  fprintf(stderr,"Failed to set worker thread priority: %s\n",lpBuffer);
+	}
+      else
+	{
+	  fprintf(stderr,"Priority of worker thread set successfully\n");
+	}
+      
+#ifdef LOCK_PROCESS_TO_SINGLE_CORE
+      if(!LockProcessToCurrentCPU()) 
+	{
+	  fprintf( stderr, "SETI@home failed to lock process to current CPU for perf timing\n" );
+	}
+#endif //LOCK_PROCESS_TO_SINGLE_CORE
+#else //_WIN32
+#if CUDART_VERSION >= 3000
+      initConfig(gCudaDevProps.pciBusID,gCudaDevProps.pciDeviceID);
+#else
+      initConfig(0,0);
 #endif
-
-#ifdef USE_FFTWF
-    if (!gSetiUseCudaDevice && ac_fft_len) 
-//	if (ac_fft_len) 
+#endif  //_WIN32
+    }
+  else
+#endif //USE_CUDA
     {
-        float *out= (float *)malloc_a(ac_fft_len*sizeof(float),MEM_ALIGN);
-        float *scratch2=(float *)malloc_a(ac_fft_len*sizeof(float),MEM_ALIGN);
-        if ((out == NULL) || (scratch2==NULL)) {
-            SETIERROR(MALLOC_FAILED, "AC out == NULL || scratch == NULL");
-        }
-        autocorr_plan=fftwf_plan_r2r_1d(ac_fft_len, scratch2, out, FFTW_REDFT10, FFTW_MEASURE|FFTW_PRESERVE_INPUT);
-        free_a(scratch2);
-		free_a(out);
-	}
-
-	if (!gSetiUseCudaDevice) 
-	{
-		wisdom=boinc_fopen("wisdom.sah","w");
-		if (wisdom) {
-			char *wiz=fftwf_export_wisdom_to_string();
-			if (wiz) {
-				fwrite(wiz,strlen(wiz),1,wisdom);
-			}
-			fclose(wisdom);
-		}
-	}
+      //fprintf(stderr,"SETI@home NOT using CUDA, falling back on host CPU processing\n");
+      fprintf(stderr,"SETI@home NOT using CUDA, initiating Boinc temporary exit (180 secs)...\n");
+#ifdef _WIN32
+      fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
+      worker_thread_exit_ack = true; 
 #endif
-
-#if USE_CUDA && _WIN32
-	char custr[10];
-	#ifdef CUDA23
-	    // special case for 2.3 target build buitl with 2.2 compiler
-		// meant for use with 2.3 DLLs
-		_itoa_s(2030,custr,10);
-	#else 
-		_itoa_s(CUDART_VERSION,custr,10);
-	#endif
-#else
-	char custr[10];
-	sprintf(custr,"%d",CUDART_VERSION);
-#endif
-
-    if (!state.icfft) {
-		fprintf(stderr,"\n");
-//		fprintf(stderr," )       _   _  _)_ o  _  _ \n");
-//		fprintf(stderr,"(__ (_( ) ) (_( (_  ( (_ (  \n");
-//		fprintf(stderr," not bad for a human...  _) \n\n");
-		fprintf(stderr,"setiathome enhanced x41zc, Cuda %c.%c%c %s\n\n",custr[0],custr[2],custr[3],(CUDART_VERSION >= 6050) ? "special":"");
-		if (ac_fft_len) fprintf(stderr,"Detected setiathome_enhanced_v7 task. Autocorrelations enabled, size %dk elements.\n",(int)(ac_fft_len/1024));
-		else fprintf(stderr,"Legacy setiathome_enhanced V6 mode.\n");
-        fprintf(stderr,"Work Unit Info:\n");
-        fprintf(stderr,"...............\n");
-        fprintf(stderr,"WU true angle range is :  %f\n", swi.angle_range);
-    } else 
-	{
-		fprintf(stderr,"Restarted at %.2f percent, with setiathome enhanced x41zc, Cuda %c.%c%c %s\n",
-			progress*100,custr[0],custr[2],custr[3],(CUDART_VERSION >= 6050) ? "special":"");
-		if (ac_fft_len) fprintf(stderr,"Detected setiathome_enhanced_v7 task. Autocorrelations enabled, size %dk elements.\n",(int)(ac_fft_len/1024));
-		else fprintf(stderr,"Legacy setiathome_enhanced V6 mode.\n");
-	}
-#ifdef WIN64
-	fprintf(stderr,"Windows 64-Bit build\n");
-#endif
-    fflush(stderr);
-
-    swi.num_fft_lengths=FftNum;
-
-	// gernerate table of chirp/fft pairs (we may read table from file if testing)
-    if (cfft_file != NULL)
-        num_cfft = ReadCFftFile(&ChirpFftPairs, &MinChirpStep);
-    else
-        num_cfft = (int)GenChirpFftPairs(&ChirpFftPairs, &MinChirpStep);
-    if (num_cfft == MALLOC_FAILED) {
-        SETIERROR(MALLOC_FAILED, "num_cfft == MALLOC_FAILED");
+      boinc_temporary_exit(180,"Cuda initialisation failure, CPU fallback not supported in this release, temporary exit" );
     }
-
-    // Get together various values that we'll need to analyse power over time
-    ComputePoTInfo(num_cfft, NumDataPoints);
-
-    // Initialize TrigArrays for testing if we have the memory....
-    //if ((app_init_data.host_info.m_nbytes != 0)  &&
-    //    (app_init_data.host_info.m_nbytes >= (double)(64*1024*1024))) {
-    //        InitTrigArray (NumDataPoints, MinChirpStep,
-    //            TESTCHIRPIND,
-    //            swi.subband_sample_rate);
-    //}
-
-
-    boinc_install_signal_handlers();
-#ifdef BOINC_APP_GRAPHICS
-    if (!nographics()) strcpy(sah_graphics->status, "Choosing optimal functions");
+  
+  use_transposed_pot= (!notranspose_flag) &&
+    ((app_init_data.host_info.m_nbytes != 0)  &&
+     (app_init_data.host_info.m_nbytes >= (double)(96*1024*1024)));
+  int num_cfft                  = 0;
+  float chirprate;
+  int last_chirp_ind = - 1 << 20, chirprateind;
+  
+  double cputime0=0; //progress_diff, progress_in_cfft,
+  int retval=0;
+  
+  if(swi.analysis_cfg.credit_rate != 0) 
+    LOAD_STORE_ADJUSTMENT=swi.analysis_cfg.credit_rate;
+  
+#ifndef DEBUG
+  int icfft;
 #endif
-    // Choose the best analysis functions.
-    //ChooseFunctions(&BaseLineSmooth,
-    //    &GetPowerSpectrum,
-    //    &ChirpData,
-    //    &Transpose,
-    //    ChirpFftPairs,
-    //    num_cfft,
-    //    swi.nsamples,
-    //    state.icfft == 0);
-
-    //if ((app_init_data.host_info.m_nbytes != 0)  &&
-    //    (app_init_data.host_info.m_nbytes >= (double)(64*1024*1024))) {
-    //        FreeTrigArray();
-    //        // If we're using TrigArrays, reallocate & reinit
-    //        if (ChirpData == v_ChirpData) {
-    //            InitTrigArray (NumDataPoints, MinChirpStep,
-    //                ChirpFftPairs[state.icfft].ChirpRateInd,
-    //                swi.subband_sample_rate);
-    //        }
-    //}
-
+  int NumFfts, ifft, fftlen;
+  int CurrentSub;
+  int FftNum, need_transpose;
+  unsigned long bitfield=swi.analysis_cfg.analysis_fft_lengths;
+  unsigned long FftLen;
+  unsigned long ac_fft_len=swi.analysis_cfg.autocorr_fftlen;
 #ifdef USE_IPP
-    if (MaxBufSize) {
-        FftBuf = (Ipp8u*) malloc_a (MaxBufSize, MEM_ALIGN);
-        if (FftBuf == NULL) SETIERROR (MALLOC_FAILED, "FftBuf == NULL");
-    }
-#elif 0 // !defined(USE_FFTWF)
-    for (FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) {
-        CoeffTab[FftNum] = (float*) calloc_a(swi.analysis_fft_lengths[FftNum]/2, sizeof(float), MEM_ALIGN);
-        if (CoeffTab[FftNum] == NULL) SETIERROR(MALLOC_FAILED, "CoeffTab[FftNum] == NULL");
-    }
-	CoeffTab_ac = (float*) calloc_a(swi.analysis_cfg.autocorr_fftlen/2, sizeof(float), MEM_ALIGN);
-    if (CoeffTab_ac == NULL) SETIERROR(MALLOC_FAILED, "CoeffTab_ac == NULL");
+  IppsFFTSpec_C_32fc* FftSpec[MAX_NUM_FFTS];
+  int BufSize;
+  
+  ippStaticInit();   // initialization of IPP library
+#elif defined(USE_FFTWF)
+  // plan space for fftw
+  fftwf_plan analysis_plans[MAX_NUM_FFTS];
+  fftwf_plan autocorr_plan[8];
+#else
+  // fields need by the ooura fft logic
+  //int * BitRevTab[MAX_NUM_FFTS];
+  //	int * BitRevTab_ac;
+  //float * CoeffTab[MAX_NUM_FFTS];
+  //	float * CoeffTab_ac;
 #endif
-
-    // Allocate WorkData array the size of the biggest FFT we'll do
-    // TODO: Deallocate this at the end of the function
-    WorkData = (sah_complex *)malloc_a(FftLen/2 * sizeof(sah_complex),MEM_ALIGN);
-    if (WorkData == NULL) {
-        SETIERROR(MALLOC_FAILED, "WorkData == NULL");
+  
+  // Allocate data array and work area arrays.
+  
+  ChirpedData = state.data;
+  PowerSpectrum = (float*) calloc_a(NumDataPoints, sizeof(float), MEM_ALIGN);
+  if (PowerSpectrum == NULL) SETIERROR(MALLOC_FAILED, "PowerSpectrum == NULL");
+  if (use_transposed_pot) 
+    {
+      tPowerSpectrum = (float*) calloc_a(NumDataPoints, sizeof(float), MEM_ALIGN);
+      if (tPowerSpectrum == NULL) SETIERROR(MALLOC_FAILED, "tPowerSpectrum == NULL");
+    } 
+  else 
+    {
+      tPowerSpectrum=PowerSpectrum;
     }
-
-    // Smooth Baseline
-
+  AutoCorrelation = (float*)calloc_a(ac_fft_len, sizeof(float), MEM_ALIGN);
+  if (AutoCorrelation == NULL) SETIERROR(MALLOC_FAILED, "AutoCorrelation == NULL");
+  
+  // boinc_worker_timer();
+  FftNum=0;
+  FftLen=1;
+  
+#ifdef USE_FFTWF
+  FILE *wisdom;
+  if (!gSetiUseCudaDevice) 
+    {
+      if (wisdom=boinc_fopen("wisdom.sah","r")) 
+	{
+	  char *wiz=(char *)calloc_a(1024,64,MEM_ALIGN);
+	  int n=0;
+	  while (wiz && n<64*1024 && !feof(wisdom)) { n+=(int)fread(wiz+n,1,80,wisdom); }
+	  fftwf_import_wisdom_from_string(wiz);
+	  free_a(wiz);
+	  fclose(wisdom);
+	}
+    }
+#endif
+  
+#ifdef BOINC_APP_GRAPHICS
+  if (!nographics()) strcpy(sah_graphics->status, "Generating FFT Coefficients");
+#endif
+  
+#if  defined(USE_CUDA)
+  extern int cufftplans_done;
+  int cfftplans_failcount = 0;
+  int cfftplans_sucesscount = 0;
+#endif
+  
+  while (bitfield != 0) 
+    {
+      if (bitfield & 1) 
+	{
+	  swi.analysis_fft_lengths[FftNum]=FftLen;
+#if defined(USE_IPP)
+	  int order = 0;
+	  for (int tmp = FftLen; !(tmp & 1); order++) tmp >>= 1;
+	  if (ippsFFTInitAlloc_C_32fc(&FftSpec[FftNum], order,
+				      IPP_FFT_NODIV_BY_ANY, ippAlgHintFast)) {
+	    SETIERROR (MALLOC_FAILED, "ippsFFTInitAlloc failed");
+	  }
+#elif defined(USE_FFTWF)
+	  sah_complex *scratch;
+	  if (1) //!gSetiUseCudaDevice)
+	    {
+	      WorkData = (sah_complex *)malloc_a(FftLen * sizeof(sah_complex),MEM_ALIGN);
+	      scratch=(sah_complex *)malloc_a(FftLen*sizeof(sah_complex),MEM_ALIGN);
+	      if ((WorkData == NULL) || (scratch==NULL)) {
+		SETIERROR(MALLOC_FAILED, "WorkData == NULL || scratch == NULL");
+	      }
+	    }
+#else
+      // See docs in fft8g.C for sizing guidelines for BitRevTab and CoeffTab.
+      //BitRevTab[FftNum] = (int*) calloc_a(3+(int)sqrt((float)swi.analysis_fft_lengths[FftNum]), sizeof(int), MEM_ALIGN);
+      //if (BitRevTab[FftNum] == NULL)  SETIERROR(MALLOC_FAILED, "BitRevTab[FftNum] == NULL");
+      //BitRevTab[FftNum][0] = 0;
+      //			BitRevTab_ac = (int*) calloc_a(3+(int)sqrt((float)swi.analysis_cfg.autocorr_fftlen), sizeof(int), MEM_ALIGN);
+      //            if (BitRevTab_ac == NULL)  SETIERROR(MALLOC_FAILED, "BitRevTab_ac == NULL");
+      //            BitRevTab_ac[0] = 0;
+#endif
+      
+#if defined(USE_FFTWF)
+	  if (1) //!gSetiUseCudaDevice) 
+	    {
+	      analysis_plans[FftNum] = fftwf_plan_dft_1d(FftLen, scratch, WorkData, FFTW_BACKWARD, FFTW_ESTIMATE|FFTW_PRESERVE_INPUT);
+	    }
+#endif 
+	  FftNum++;
+#ifdef USE_FFTWF
+	  if (1) //!gSetiUseCudaDevice) 
+	    {
+	      free_a(scratch);
+	      free_a(WorkData);
+	    }
+#endif /* USE_FFTWF */
+	  
+	}
+      FftLen*=2;
+      bitfield>>=1;
+    }
+  
+#if 0 //def USE_CUDA
+  if (cfftplans_failcount) fprintf(stderr,"%d early cuFft plans failed\n",cfftplans_failcount);  // there were failures & we fell back to CPU
+  else if (gSetiUseCudaDevice && !cfftplans_sucesscount) // All Plans postponed (no successes or failures)
+    {
+      fprintf(stderr,"Cuda Active: Plenty of total Global VRAM (>300MiB).\n All early cuFft plans postponed, to parallel with first chirp.\n");
+    } else {  //no failures, possibly some successes.  Device could be active o
+    if (gSetiUseCudaDevice) { fprintf(stderr,"Cuda Active: All %d paranoid early cuFft plans succeeded.\n",cfftplans_sucesscount); cufftplans_done++;}
+    else { fprintf(stderr,"Cuda inactive:  Established %d cuFft plans.\n",cfftplans_sucesscount); }
+  }
+#endif
+  
+#ifdef USE_FFTWF
+  if (!gSetiUseCudaDevice && ac_fft_len) 
+    //	if (ac_fft_len) 
+    {
+      float *out= (float *)malloc_a(ac_fft_len*sizeof(float),MEM_ALIGN);
+      float *scratch2=(float *)malloc_a(ac_fft_len*sizeof(float),MEM_ALIGN);
+      if ((out == NULL) || (scratch2==NULL)) {
+	SETIERROR(MALLOC_FAILED, "AC out == NULL || scratch == NULL");
+      }
+      autocorr_plan=fftwf_plan_r2r_1d(ac_fft_len, scratch2, out, FFTW_REDFT10, FFTW_MEASURE|FFTW_PRESERVE_INPUT);
+      free_a(scratch2);
+      free_a(out);
+    }
+  
+  if (!gSetiUseCudaDevice) 
+    {
+      wisdom=boinc_fopen("wisdom.sah","w");
+      if (wisdom) 
+	{
+	  char *wiz=fftwf_export_wisdom_to_string();
+	  if (wiz) 
+	    {
+	      fwrite(wiz,strlen(wiz),1,wisdom);
+	    }
+	  fclose(wisdom);
+	}
+    }
+#endif
+  
+#if USE_CUDA && _WIN32
+  char custr[10];
+#ifdef CUDA23
+  // special case for 2.3 target build buitl with 2.2 compiler
+  // meant for use with 2.3 DLLs
+  _itoa_s(2030,custr,10);
+#else 
+  _itoa_s(CUDART_VERSION,custr,10);
+#endif
+#else
+  char custr[10];
+  sprintf(custr,"%d",CUDART_VERSION);
+#endif
+  
+  if (!state.icfft) {
+    fprintf(stderr,"\n");
+    //		fprintf(stderr," )       _   _  _)_ o  _  _ \n");
+    //		fprintf(stderr,"(__ (_( ) ) (_( (_  ( (_ (  \n");
+    //		fprintf(stderr," not bad for a human...  _) \n\n");
+    fprintf(stderr,"setiathome enhanced x41zc, Cuda %c.%c%c %s\n\n",custr[0],custr[2],custr[3],(CUDART_VERSION >= 6050) ? "special":"");
+    if (ac_fft_len) fprintf(stderr,"Detected setiathome_enhanced_v7 task. Autocorrelations enabled, size %dk elements.\n",(int)(ac_fft_len/1024));
+    else fprintf(stderr,"Legacy setiathome_enhanced V6 mode.\n");
+    fprintf(stderr,"Work Unit Info:\n");
+    fprintf(stderr,"...............\n");
+    fprintf(stderr,"WU true angle range is :  %f\n", swi.angle_range);
+  } else 
+    {
+      fprintf(stderr,"Restarted at %.2f percent, with setiathome enhanced x41zc, Cuda %c.%c%c %s\n",
+	      progress*100,custr[0],custr[2],custr[3],(CUDART_VERSION >= 6050) ? "special":"");
+      if (ac_fft_len) fprintf(stderr,"Detected setiathome_enhanced_v7 task. Autocorrelations enabled, size %dk elements.\n",(int)(ac_fft_len/1024));
+      else fprintf(stderr,"Legacy setiathome_enhanced V6 mode.\n");
+    }
+#ifdef WIN64
+  fprintf(stderr,"Windows 64-Bit build\n");
+#endif
+  fflush(stderr);
+  //    if(swi.angle_range < 0.07)
+  //  *(char *)0 = 0; // dont do vlars
+  
+  swi.num_fft_lengths=FftNum;
+  
+  // gernerate table of chirp/fft pairs (we may read table from file if testing)
+  if (cfft_file != NULL)
+    num_cfft = ReadCFftFile(&ChirpFftPairs, &MinChirpStep);
+  else
+    num_cfft = (int)GenChirpFftPairs(&ChirpFftPairs, &MinChirpStep);
+  if (num_cfft == MALLOC_FAILED) {
+    SETIERROR(MALLOC_FAILED, "num_cfft == MALLOC_FAILED");
+  }
+  
+  // Get together various values that we'll need to analyse power over time
+  ComputePoTInfo(num_cfft, NumDataPoints);
+  
+  // Initialize TrigArrays for testing if we have the memory....
+  //if ((app_init_data.host_info.m_nbytes != 0)  &&
+  //    (app_init_data.host_info.m_nbytes >= (double)(64*1024*1024))) {
+  //        InitTrigArray (NumDataPoints, MinChirpStep,
+  //            TESTCHIRPIND,
+  //            swi.subband_sample_rate);
+  //}
+  
+  
+  boinc_install_signal_handlers();
+#ifdef BOINC_APP_GRAPHICS
+  if (!nographics()) strcpy(sah_graphics->status, "Choosing optimal functions");
+#endif
+  // Choose the best analysis functions.
+  //ChooseFunctions(&BaseLineSmooth,
+  //    &GetPowerSpectrum,
+  //    &ChirpData,
+  //    &Transpose,
+  //    ChirpFftPairs,
+  //    num_cfft,
+  //    swi.nsamples,
+  //    state.icfft == 0);
+  
+  //if ((app_init_data.host_info.m_nbytes != 0)  &&
+  //    (app_init_data.host_info.m_nbytes >= (double)(64*1024*1024))) {
+  //        FreeTrigArray();
+  //        // If we're using TrigArrays, reallocate & reinit
+  //        if (ChirpData == v_ChirpData) {
+  //            InitTrigArray (NumDataPoints, MinChirpStep,
+  //                ChirpFftPairs[state.icfft].ChirpRateInd,
+  //                swi.subband_sample_rate);
+  //        }
+  //}
+  
+#ifdef USE_IPP
+  if (MaxBufSize) {
+    FftBuf = (Ipp8u*) malloc_a (MaxBufSize, MEM_ALIGN);
+    if (FftBuf == NULL) SETIERROR (MALLOC_FAILED, "FftBuf == NULL");
+  }
+#elif 0 // !defined(USE_FFTWF)
+  for(FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) 
+    {
+      CoeffTab[FftNum] = (float*) calloc_a(swi.analysis_fft_lengths[FftNum]/2, sizeof(float), MEM_ALIGN);
+      if (CoeffTab[FftNum] == NULL) SETIERROR(MALLOC_FAILED, "CoeffTab[FftNum] == NULL");
+    }
+  CoeffTab_ac = (float*) calloc_a(swi.analysis_cfg.autocorr_fftlen/2, sizeof(float), MEM_ALIGN);
+  if (CoeffTab_ac == NULL) SETIERROR(MALLOC_FAILED, "CoeffTab_ac == NULL");
+#endif
+  
+  // Allocate WorkData array the size of the biggest FFT we'll do
+  // TODO: Deallocate this at the end of the function
+  WorkData = (sah_complex *)malloc_a(FftLen/2 * sizeof(sah_complex),MEM_ALIGN);
+  if (WorkData == NULL) 
+    {
+      SETIERROR(MALLOC_FAILED, "WorkData == NULL");
+    }
+  
+  // Smooth Baseline
+  
 #ifdef DO_SMOOTH
 #ifdef BOINC_APP_GRAPHICS
-    if (!nographics()) strcpy(sah_graphics->status, "Doing Baseline Smoothing");
+  if (!nographics()) strcpy(sah_graphics->status, "Doing Baseline Smoothing");
 #endif
-    retval = BaseLineSmooth(
-        DataIn, NumDataPoints, swi.analysis_cfg.bsmooth_boxcar_length,
-        swi.analysis_cfg.bsmooth_chunk_size
-        );
-    if (retval) SETIERROR(retval,"from BaseLineSmooth");
+  retval = BaseLineSmooth(
+			  DataIn, NumDataPoints, swi.analysis_cfg.bsmooth_boxcar_length,
+			  swi.analysis_cfg.bsmooth_chunk_size
+			  );
+  if (retval) SETIERROR(retval,"from BaseLineSmooth");
 #endif
-
-
-    // used to calculate percent done
-    //ProgressUnitSize = GetProgressUnitSize(NumDataPoints, num_cfft, swi);
-    ProgressUnitSize = GetProgressUnitSize(NumDataPoints, num_cfft);
-    //#define DUMP_CHIRP
+  
+  
+  // used to calculate percent done
+  //ProgressUnitSize = GetProgressUnitSize(NumDataPoints, num_cfft, swi);
+  ProgressUnitSize = GetProgressUnitSize(NumDataPoints, num_cfft);
+  //#define DUMP_CHIRP
 #ifdef DUMP_CHIRP
-    // dump chirp/fft pairs and exit.
-    fprintf(stderr, "size  = %d MinChirpStep = %f\n", num_cfft, MinChirpStep);
-    for (icfft = 0; icfft < num_cfft; icfft++) {
-        fprintf(stderr,"%6d %15.11f %6d %6d %d %d\n",
+  // dump chirp/fft pairs and exit.
+  fprintf(stderr, "size  = %d MinChirpStep = %f\n", num_cfft, MinChirpStep);
+  for (icfft = 0; icfft < num_cfft; icfft++) {
+    fprintf(stderr,"%6d %15.11f %6d %6d %d %d\n",
             icfft,
             ChirpFftPairs[icfft].ChirpRate,
             ChirpFftPairs[icfft].ChirpRateInd,
@@ -781,587 +816,634 @@ int seti_analyze (ANALYSIS_STATE& state) {
             ChirpFftPairs[icfft].GaussFit,
             ChirpFftPairs[icfft].PulseFind
             );
-    }
-    fflush(stderr);
-    exit(0);
+  }
+  fflush(stderr);
+  exit(0);
 #endif
-
-
-    boinc_wu_cpu_time(cputime0);
-    reset_units();
-    double chirp_units=0;
-
-    // Loop through chirp/fft pairs - this is the top level analysis loop.
-    double last_ptime=0;
-    int rollovers=0;
-    double clock_max=0;
-
+  
+  
+  boinc_wu_cpu_time(cputime0);
+  reset_units();
+  double chirp_units=0;
+  
+  // Loop through chirp/fft pairs - this is the top level analysis loop.
+  double last_ptime=0;
+  int rollovers=0;
+  double clock_max=0;
+  float prevchirprate = -1.0f;
+  int   chirpoffset = 0;
+  
 #ifdef USE_CUDA
-	SAFE_EXIT_CHECK;
-	if (gSetiUseCudaDevice)
-	{
-		int attempts = 0;
-		int cinit_failed;
-		do {
-			cinit_failed = cudaAcc_initialize(DataIn, NumDataPoints, swi.analysis_cfg.gauss_pot_length, swi.nsamples,
-				swi.analysis_cfg.gauss_null_chi_sq_thresh, swi.analysis_cfg.gauss_chi_sq_thresh,
-				swi.analysis_cfg.pulse_display_thresh, PoTInfo.PulseThresh, PoTInfo.PulseMax,
-				swi.subband_sample_rate, swi.analysis_cfg.autocorr_fftlen);
-			attempts++;
-			if(cinit_failed)
-			{
-				// If true, we must have incurred a device heap alloaction error
-				fprintf(stderr, "setiathome_CUDA: CUDA runtime ERROR in device memory allocation, attempt %d of 6\n",attempts);
-				cudaAcc_free();
-				if (attempts <=6) 
-				{
-					fprintf(stderr, " waiting 5 seconds...\n");
-				#ifdef _WIN32
-					Sleep(5000);
-				#else
-					sleep(5);
-				#endif
-					fprintf(stderr, " Reinitialising Cuda Device...\n");
-					initCudaDevice();
-				}
-			}
-
-		} while( cinit_failed && attempts <= 6);
-
-		if (cinit_failed)
-		{
-			fprintf(stderr, "Exiting...\n");
-			gSetiUseCudaDevice = 0;
-		#ifdef _WIN32
-			fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
-			worker_thread_exit_ack = true; 
-		#endif
-			boinc_temporary_exit(180,"Cuda initialisation failure, temporary exit");
-		}
-
-//		else
-//		{ 	SAFE_EXIT_CHECK;
-//			if(cudaAcc_initializeGaussfit(PoTInfo, swi.analysis_cfg.gauss_pot_length, swi.nsamples, swi.analysis_cfg.gauss_null_chi_sq_thresh, swi.analysis_cfg.gauss_chi_sq_thresh))
-//			{
-				// If true, we must have incurred a device heap alloaction error,
-				// free up what we've allocated and fall back on to CPU usage
-//				fprintf(stderr, "setiathome_CUDA: CUDA runtime ERROR in device memory allocation (Step 2 of 3). Falling back to HOST CPU processing...\n");
-//				cudaAcc_free_Gaussfit();
-//				cudaAcc_free();
-//				gSetiUseCudaDevice = 0;
-//			}    
-//			else { SAFE_EXIT_CHECK;
-//				if(cudaAcc_initialize_pulse_find(swi.analysis_cfg.pulse_display_thresh, PoTInfo.PulseThresh, PoTInfo.PulseMax))
-//				{
-					// If true, we must have incurred a device heap alloaction error,
-					// free up what we've allocated and fall back on to CPU usage
-//					fprintf(stderr, "setiathome_CUDA: CUDA runtime ERROR in device memory allocation (Step 3 of 3). Falling back to HOST CPU processing...\n");
-//					cudaAcc_free_pulse_find();
-//					cudaAcc_free_Gaussfit();
-//					cudaAcc_free();
-//					gSetiUseCudaDevice = 0;
-//				}
-//			}
-//		}
-//		SAFE_EXIT_CHECK;
-//		if (gSetiUseCudaDevice)
-//		{  // potential partial fallback if not enough room for Autocorrelation on GPU
-//			if (cudaAcc_InitializeAutocorrelation(ac_fft_len))
-//			{
-					// If true, we must have incurred a device heap alloaction error,
-					// free up what we've allocated and do partial fallback to CPU of autoc
-//					fprintf(stderr, "setiathome_CUDA: CUDA runtime WARNING in device memory allocation (Step 4 of 4). Not enough VRAM for Autocorrelations, processing those on CPU...\n");
-//					cudaAcc_free_AutoCorrelation();
-//			}
-//		}
-		SAFE_EXIT_CHECK;
-		if (!gSetiUseCudaDevice)
-		{
-		//Jason: fftw plans won't have been done, so do them
-		//===================================================================================
-		#if defined(USE_IPP)
-			#error	"IPP plans are not set up in CPU fallback Code\n";
-		#elif defined(USE_FFTWF)
-			//It's actually OK, I've re-engaged early FFTW plans
-		#else // must be ourra
-			//#error	"Ourra FFT plans are not set up in CPU fallback Code\n";
-		#endif 
-		//===================================================================================
-		}
-	}
-#endif //USE_CUDA
-
-    for (icfft = state.icfft; icfft < num_cfft; icfft++) {		
-
-        fftlen    = ChirpFftPairs[icfft].FftLen;
-        chirprate = (float)ChirpFftPairs[icfft].ChirpRate;
-        chirprateind = ChirpFftPairs[icfft].ChirpRateInd;
-        //boinc_fpops_cumulative((SETUP_FLOPS+analysis_state.FLOP_counter)*LOAD_STORE_ADJUSTMENT);
-        // boinc_worker_timer();
-#ifdef DEBUG
-        double ptime=static_cast<double>((unsigned)clock())/CLOCKS_PER_SEC+
-            clock_max*rollovers;
-        clock_max=std::max(last_ptime-ptime,clock_max);
-        if (ptime<last_ptime) {
-            rollovers++;
-            ptime=static_cast<double>((unsigned)clock())/CLOCKS_PER_SEC+
-                clock_max*rollovers;
-        }
-        last_ptime=ptime;
-
-        fprintf(stderr,"%f %f %f %f %f %f %f %f %f\n",
-            ptime,
-            progress,
-            ((double)icfft)/num_cfft,
-            analysis_state.FLOP_counter,
-            triplet_units,
-            pulse_units,
-            spike_units,
-            gauss_units,
-            chirp_units
-            );
-        fflush(stderr);
-
-        double cputime=0;
-        boinc_wu_cpu_time(cputime);
-        cputime-=cputime0;
-#endif
-
-        remaining=1.0-(double)icfft/num_cfft;		
-
-        if (chirprateind != last_chirp_ind) {
-#ifdef BOINC_APP_GRAPHICS
-            if (!nographics()) strcpy(sah_graphics->status, "Chirping data");
-#endif            			
-    SAFE_EXIT_CHECK;
-
-#ifdef USE_CUDA
-	if (gSetiUseCudaDevice)
-	{
- 		if (!cufftplans_done)
-		{
-			//fprintf(stderr,"before async chirp\n");
-		   int FNum=0;
-		   int FLen=1;
-		   cudaStream_t chirpstream;
-		   cudaStreamCreate(&chirpstream);
-		   if ( gCudaDevProps.major >= 2 || gCudaDevProps.minor >=3 )
-		      cudaAcc_CalcChirpData_sm13_async(chirprate, 1/swi.subband_sample_rate, ChirpedData,chirpstream);
-		   else
-   			  cudaAcc_CalcChirpData_async(chirprate, 1/swi.subband_sample_rate, ChirpedData,chirpstream); //change to async version
-		   bitfield=swi.analysis_cfg.analysis_fft_lengths; // reset planning
-			while (bitfield != 0) 
-			{
-				if (bitfield & 1)
-				{
-					swi.analysis_fft_lengths[FNum]=FLen;
-					// Create FFT plan configuration
-					if(gSetiUseCudaDevice)
-					{
-						if(cudaAcc_fftwf_plan_dft_1d(FNum, FLen, NumDataPoints))
-						{
-							// If we're here, something went wrong in the plan.
-							// Possibly ran out of video memory.  Destroy what we
-							// have and do a Boinc temporary exit.
- 							fprintf(stderr,"  A cuFFT plan FAILED, Initiating Boinc temporary exit (180 secs)\n"); 
-							cudaAcc_free();
-						#ifdef _WIN32
-							fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
-							worker_thread_exit_ack = true; 
-						#endif							
-							boinc_temporary_exit(180,"CuFFT Plan Failure, temporary exit");
-						}
-					}
-					FNum++;
-				}
-				FLen*=2;
-				bitfield>>=1;
-			}
-		   cufftplans_done++;
-		   CUDA_ACC_SAFE_CALL((CUDASYNC),true); // Wait for first chirp to finish now that cufft plans are done
-		   analysis_state.FLOP_counter+=12.0*NumDataPoints;
-		   cudaStreamDestroy(chirpstream); //finished with the async chirp
-			//fprintf(stderr,"after async chirp\n");
-		} else {
-			//fprintf(stderr,"before sync chirp\n");
-			if ( gCudaDevProps.major >= 2 || gCudaDevProps.minor >=3 )
-				cudaAcc_CalcChirpData_sm13(chirprate, 1/swi.subband_sample_rate, ChirpedData);
-			else
-			   cudaAcc_CalcChirpData(chirprate, 1/swi.subband_sample_rate, ChirpedData); // ChirpedData left over for testing accuracy
-			analysis_state.FLOP_counter+=12.0*NumDataPoints;
-			//fprintf(stderr,"after sync chirp\n");
-		}
-	}
-	else
-	{
-#endif //USE_CUDA
-		retval = ChirpData(
-			DataIn,
-			ChirpedData,
-			chirprateind,
-			chirprate,
-			NumDataPoints,
-			swi.subband_sample_rate
-			);
-		if (retval) SETIERROR(retval, "from ChirpData()");
-#ifdef USE_CUDA
-	}
-#endif //USE_CUDA
-
-            progress += (double)(ProgressUnitSize * ChirpProgressUnits());
-            chirp_units+=(double)(ProgressUnitSize * ChirpProgressUnits());
-            progress = std::min(progress,1.0);
-        }
-
-        //    last_chirp = chirprate;
-        last_chirp_ind = chirprateind;
-
-        // Process this FFT length.
-        // For a given FFT length (at a given chirp), we construct
-        // PowerSpectrum[] which is a "waterfall" array of power spectra,
-        // each fftlen long on the frequency axis and sample time long
-        // on the time axis.
-        // As we go along, we check each spectra for spikes.
-
-        state.icfft = icfft;     // update analysis state
-
-        // Find index into FFT length table for the current
-        // FFT length.  This will be the same index needed
-        // for ooura's coeffecient and bit reverse tables.
-        for (FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) {
-            if (swi.analysis_fft_lengths[FftNum] == fftlen) {
-                break;
-            }
-        }
-
-#ifdef BOINC_APP_GRAPHICS
-        if (!nographics()) {
-            sah_graphics->fft_info.chirp_rate = chirprate;
-            sah_graphics->fft_info.fft_len = fftlen;
-            strcpy(sah_graphics->status, "Computing Fast Fourier Transform");
-        }
-#endif
-
-        // If PoT freq bin is non-negative, we are into PoT analysis
-        // for this cfft pair and should not re-output an "ogh" line.
-        if (state.PoT_freq_bin == -1) {
-            retval = result_group_start();
-            if (retval) SETIERROR(retval,"from result_group_start");
-        }
-
-        // Number of FFTs for this length
-        NumFfts   = NumDataPoints / fftlen;
-
-#ifdef BOINC_APP_GRAPHICS
-        if (!nographics()) {
-            rarray.init_data(fftlen, NumFfts);
-        }
-#endif
-
-#ifdef USE_CUDA
-		if (gSetiUseCudaDevice)
-		{
-			cudaAcc_execute_dfts(FftNum);
-			state.FLOP_counter+=5*(double)fftlen*log((double)fftlen)/log(2.0) * NumFfts;		
-
-//				cudaAcc_GetPowerSpectrum(NumDataPoints/2,0,fftstream0);
-				cudaAcc_GetPowerSpectrum(NumDataPoints,0,fftstream0);
-//				cudaAcc_GetPowerSpectrum(NumDataPoints/2,NumDataPoints/2,fftstream1);
-
-			state.FLOP_counter+=3.0*NumDataPoints;
-
-			if (state.PoT_freq_bin == -1) {  
-				cudaAcc_summax(fftlen);
-				state.FLOP_counter+=NumDataPoints;
-				if (swi.analysis_cfg.spikes_per_spectrum > 1) {
-					SETIERROR(retval,"from FindSpikes cudaAcc_summax doesn't support (swi.analysis_cfg.spikes_per_spectrum > 1)");
-				}
-			}
-
-			for (ifft = 0; ifft < NumFfts; ifft++) {
-				CurrentSub = fftlen * ifft;            
-
-				if (state.PoT_freq_bin == -1) {
-					state.FLOP_counter+=(double)fftlen;                
-						retval = FindSpikes2(                        
-							fftlen,
-							ifft,
-							swi,
-							PowerSpectrumSumMax[ifft].x,
-							PowerSpectrumSumMax[ifft].y,
-							(int) PowerSpectrumSumMax[ifft].z
-							);
-					progress += SpikeProgressUnits(fftlen)*ProgressUnitSize/NumFfts;
-					if (retval) SETIERROR(retval,"from FindSpikes");
-
-					if (fftlen==ac_fft_len) {
-			 			state.FLOP_counter+=((double)fftlen)*5*log((double)fftlen)/log(2.0)+2*fftlen;
-						if (gCudaAutocorrelation)
-						{
-							cudaAcc_FindAutoCorrelation(AutoCorrelation, ac_fft_len, ifft  );
-							//cudaMemcpy(AutoCorrelation,dev_AutoCorrIn,(ac_fft_len>>1)*sizeof(float),cudaMemcpyDeviceToHost);
-							//Jason: postprocessing result reduction mostly moved to GPU, no large Device->Host Memcopy needed.
-							//Just enough info for updating best & reporting signals.
-							retval = FindAutoCorrelation_c( AutoCorrelation, fftlen, ifft, swi  );
-							if (retval) SETIERROR(retval,"from FindAutoCorrelation_c() - after Cuda");
-						} else {
-						//partial fallback case (Low VRAM)
-						    cudaMemcpy(&PowerSpectrum[CurrentSub],&dev_PowerSpectrum[CurrentSub],fftlen*sizeof(float),cudaMemcpyDeviceToHost);
-							#ifdef USE_FFTWF
-								fftwf_execute_r2r(autocorr_plan,&PowerSpectrum[CurrentSub],AutoCorrelation);
-							#else
-								fprintf(stderr,"fftw is disabled, reached a problem in CPU fallback, exiting with an error\n");
-								SETIERROR(-1,"from Autocorrelation, lacks CPU Fallback FFT (no fftw)");
-							#endif
-							retval = FindAutoCorrelation( AutoCorrelation, fftlen, ifft, swi  );
-							if (retval) SETIERROR(retval,"from FindAutoCorrelation");
-						}
-					}
-				}
-				progress = std::min(progress,1.0);
-	#ifdef BOINC_APP_GRAPHICS
-				if (!nographics()) {
-					rarray.add_source_row(PowerSpectrum+fftlen*ifft);
-					sah_graphics->local_progress = (((float)ifft+1)/NumFfts);
-				}
-	#endif
-				remaining=1.0-(double)(icfft+1)/num_cfft;
-				fraction_done(progress,remaining);
-			} // loop through chirped data array
-		}
-		else
-		{
-#endif // USE_CUDA
-
-			for (ifft = 0; ifft < NumFfts; ifft++) {
-				// boinc_worker_timer();
-				CurrentSub = fftlen * ifft;
-#if !defined(USE_FFTWF) && !defined(USE_IPP)
-				// FFTW and IPP now use out of place transforms.
-				memcpy(
-					WorkData,
-					&ChirpedData[CurrentSub],
-					(int)(fftlen * sizeof(sah_complex))
-					);
-#endif
-
-				state.FLOP_counter+=5*(double)fftlen*log((double)fftlen)/log(2.0);
-#ifdef USE_IPP
-				ippsFFTInv_CToC_32fc((Ipp32fc*)ChirpedData[CurrentSub],
-					(Ipp32fc*)WorkData,
-					FftSpec[FftNum], FftBuf);
-#elif defined(USE_FFTWF)
-				//fprintf(stderr,"executing fftw analysis_plan[FftNum=%d], length=%d ...",FftNum,fftlen);
-				fftwf_execute_dft(analysis_plans[FftNum], &ChirpedData[CurrentSub], WorkData);
-				//fprintf(stderr,"done.\n");
-#else
-				// replace time with freq - ooura FFT
-				//cdft(fftlen*2, 1, WorkData, BitRevTab[FftNum], CoeffTab[FftNum]);
-#endif
-
-				// replace freq with power
-				state.FLOP_counter+=(double)fftlen;
-				GetPowerSpectrum( WorkData,
-					&PowerSpectrum[CurrentSub],
-					fftlen
-					);
-
-
-				// any ETIs ?!
-				// If PoT freq bin is non-negative, we are into PoT analysis
-				// for this cfft pair and need not redo spike finding.
-				if (state.PoT_freq_bin == -1) {
-					state.FLOP_counter+=(double)fftlen;
-					retval = FindSpikes(
-						&PowerSpectrum[CurrentSub],
-						fftlen,
-						ifft,
-						swi
-						);
-					progress += SpikeProgressUnits(fftlen)*ProgressUnitSize/NumFfts;
-					if (retval) SETIERROR(retval,"from FindSpikes");
-
-					if (fftlen==ac_fft_len) {
-			 				    state.FLOP_counter+=((double)fftlen)*5*log((double)fftlen)/log(2.0)+2*fftlen;
-								#ifdef USE_FFTWF
-									fftwf_execute_r2r(autocorr_plan,&PowerSpectrum[CurrentSub],AutoCorrelation);
-								#else
-									fprintf(stderr,"fftw is disabled, reached a problem in CPU fallback, exiting with an error\n");
-									SETIERROR(-1,"from Autocorrelation, lacks CPU Fallback FFT (no fftw)");
-								#endif
-								retval = FindAutoCorrelation( AutoCorrelation, fftlen, ifft, swi  );
-								if (retval) SETIERROR(retval,"from FindAutoCorrelation");
-					}
-
-				}
-
-				//progress = ((float)icfft)/num_cfft + ((float)ifft)/(NumFfts*num_cfft);
-				progress = std::min(progress,1.0);
-#ifdef BOINC_APP_GRAPHICS
-				if (!nographics()) {
-					rarray.add_source_row(PowerSpectrum+fftlen*ifft);
-					sah_graphics->local_progress = (((float)ifft+1)/NumFfts);
-				}
-#endif
-				remaining=1.0-(double)(icfft+1)/num_cfft;
-				fraction_done(progress,remaining);
-				// jeffc
-				//fprintf(stderr, "S fft len %d  progress = %12.10f\n", fftlen, progress);
-			} // loop through chirped data array
-#ifdef USE_CUDA
-		}
-#endif //USE_CUDA
-
-#ifdef BOINC_APP_GRAPHICS
-        if (!nographics()) {
-            memcpy(&sah_shmem->rarray_data, &rarray, sizeof(REDUCED_ARRAY_DATA));
-        }
-#endif
-        fraction_done(progress,remaining);
-        // jeffc
-        //fprintf(stderr, "Sdone fft len %d  progress = %12.10f\n", fftlen, progress);
-
-        // transpose PoT matrix to make memory accesses nicer
-        need_transpose = ChirpFftPairs[icfft].GaussFit || ChirpFftPairs[icfft].PulseFind;
-        if ( !need_transpose ) {
-            int tmpPulsePoTLen, tmpOverlap;                        
-            GetPulsePoTLen( NumFfts, &tmpPulsePoTLen, &tmpOverlap );            
-            if ( ! ( tmpPulsePoTLen > PoTInfo.TripletMax || tmpPulsePoTLen < PoTInfo.TripletMin ) )
-                need_transpose = true;
-        }
-
-        if (need_transpose && use_transposed_pot)
-		{
-#ifdef USE_CUDA
-			if (!gSetiUseCudaDevice)
-#endif
-			{
-				Transpose(fftlen, NumFfts, (float *) PowerSpectrum, (float *)tPowerSpectrum);            
-			}
-			//  NOTE CUDA code path does not need to transpose the data
-			//  else	
-			//  {
-			//	  // TODO: No need to transpose when everything is done on GPU
-			//	  cudaAcc_transpose((float *)tPowerSpectrum, fftlen, NumFfts);
-			//	}
-        }
-
-        //
-        // Analyze Power over Time.  May return quickly if this FFT
-        // length and/or this WUs slew rate places the data block
-        // outside PoT analysis limits.
-        // Counting flops is done inside analyze_pot
-        retval = analyze_pot(tPowerSpectrum, NumDataPoints, ChirpFftPairs[icfft]);
-        if (retval) SETIERROR(retval,"from analyze_pot");
-
-#ifdef BOINC_APP_GRAPHICS
-        // switch the display back to "best of" signals
-        //
-        if (!nographics()) {
-            sah_graphics->gi.copy(best_gauss, true);
-            sah_graphics->pi.copy(best_pulse, true);
-            sah_graphics->ti.copy(best_triplet, true);
-        }
-#endif
-        // Force progress to 100% before calling result_group_end() to store
-        //  100% in state file so it will survive exit & relaunch
-        if (icfft == (num_cfft-1)) {
-            progress = 1;
-            remaining = 0;
-            fraction_done(progress,remaining);
-        }
-        retval = checkpoint();
-        if (retval) SETIERROR(retval,"from checkpoint() in seti_analyse()");
-    } // loop over chirp/fftlen paris
-
-#ifdef USE_CUDA
-	if (gSetiUseCudaDevice)
+  SAFE_EXIT_CHECK;
+  if (gSetiUseCudaDevice)
     {
-		cudaAcc_free(); // Now includes freeing pulsefind, Gaussfit & autocorrelation as needed.
+      int attempts = 0;
+      int cinit_failed;
+      do 
+	{
+	  cinit_failed = cudaAcc_initialize(DataIn, NumDataPoints, swi.analysis_cfg.gauss_pot_length, swi.nsamples,
+					    swi.analysis_cfg.gauss_null_chi_sq_thresh, swi.analysis_cfg.gauss_chi_sq_thresh,
+					    swi.analysis_cfg.pulse_display_thresh, PoTInfo.PulseThresh, PoTInfo.PulseMax,
+					    swi.subband_sample_rate, swi.analysis_cfg.autocorr_fftlen);
+	  attempts++;
+	  if(cinit_failed)
+	    {
+	      // If true, we must have incurred a device heap alloaction error
+	      fprintf(stderr, "setiathome_CUDA: CUDA runtime ERROR in device memory allocation, attempt %d of 6\n",attempts);
+	      cudaAcc_free();
+	      if (attempts <=6) 
+		{
+		  fprintf(stderr, " waiting 5 seconds...\n");
+#ifdef _WIN32
+		  Sleep(5000);
+#else
+		  sleep(5);
+#endif
+		  fprintf(stderr, " Reinitialising Cuda Device...\n");
+		  initCudaDevice();
+		}
+	    }
+	  
+	} while( cinit_failed && attempts <= 6);
+      
+      if (cinit_failed)
+	{
+	  fprintf(stderr, "Exiting...\n");
+	  gSetiUseCudaDevice = 0;
+#ifdef _WIN32
+	  fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
+	  worker_thread_exit_ack = true; 
+#endif
+	  boinc_temporary_exit(180,"Cuda initialisation failure, temporary exit");
+	}
+      
+      //		else
+      //		{ 	SAFE_EXIT_CHECK;
+      //			if(cudaAcc_initializeGaussfit(PoTInfo, swi.analysis_cfg.gauss_pot_length, swi.nsamples, swi.analysis_cfg.gauss_null_chi_sq_thresh, swi.analysis_cfg.gauss_chi_sq_thresh))
+      //			{
+      // If true, we must have incurred a device heap alloaction error,
+      // free up what we've allocated and fall back on to CPU usage
+      //				fprintf(stderr, "setiathome_CUDA: CUDA runtime ERROR in device memory allocation (Step 2 of 3). Falling back to HOST CPU processing...\n");
+      //				cudaAcc_free_Gaussfit();
+      //				cudaAcc_free();
+      //				gSetiUseCudaDevice = 0;
+      //			}    
+      //			else { SAFE_EXIT_CHECK;
+      //				if(cudaAcc_initialize_pulse_find(swi.analysis_cfg.pulse_display_thresh, PoTInfo.PulseThresh, PoTInfo.PulseMax))
+      //				{
+      // If true, we must have incurred a device heap alloaction error,
+      // free up what we've allocated and fall back on to CPU usage
+      //					fprintf(stderr, "setiathome_CUDA: CUDA runtime ERROR in device memory allocation (Step 3 of 3). Falling back to HOST CPU processing...\n");
+      //					cudaAcc_free_pulse_find();
+      //					cudaAcc_free_Gaussfit();
+      //					cudaAcc_free();
+      //					gSetiUseCudaDevice = 0;
+      //				}
+      //			}
+      //		}
+      //		SAFE_EXIT_CHECK;
+      //		if (gSetiUseCudaDevice)
+      //		{  // potential partial fallback if not enough room for Autocorrelation on GPU
+      //			if (cudaAcc_InitializeAutocorrelation(ac_fft_len))
+      //			{
+      // If true, we must have incurred a device heap alloaction error,
+      // free up what we've allocated and do partial fallback to CPU of autoc
+      //					fprintf(stderr, "setiathome_CUDA: CUDA runtime WARNING in device memory allocation (Step 4 of 4). Not enough VRAM for Autocorrelations, processing those on CPU...\n");
+      //					cudaAcc_free_AutoCorrelation();
+      //			}
+      //		}
+      SAFE_EXIT_CHECK;
+      if (!gSetiUseCudaDevice)
+	{
+	  //Jason: fftw plans won't have been done, so do them
+	  //===================================================================================
+#if defined(USE_IPP)
+#error	"IPP plans are not set up in CPU fallback Code\n";
+#elif defined(USE_FFTWF)
+	  //It's actually OK, I've re-engaged early FFTW plans
+#else // must be ourra
+	  //#error	"Ourra FFT plans are not set up in CPU fallback Code\n";
+#endif 
+	  //===================================================================================
+	}
     }
 #endif //USE_CUDA
-
-    // Return the "best of" signals.  This may include duplicates of
-    // already reported interesting signals.
-    if (best_spike->score) {
-        retval = outfile.printf("%s", best_spike->s.print_xml(0,0,1,"best_spike").c_str());
-        if (retval < 0) {
-            SETIERROR(WRITE_FAILED,"from outfile.printf (best spike) in seti_analyze()");
-        }
-
-    }
-
-	if (best_autocorr->score) {
-        retval = outfile.printf("%s", best_autocorr->a.print_xml(0,0,1,"best_autocorr").c_str());
-        if (retval < 0) {
-            SETIERROR(WRITE_FAILED,"from outfile.printf (best autocorr) in seti_analyze()");
-        }
-    }
-
-    if (best_gauss->score) {
-        retval = outfile.printf("%s", best_gauss->g.print_xml(0,0,1,"best_gaussian").c_str());
-        if (retval < 0) {
-            SETIERROR(WRITE_FAILED,"from outfile.printf (best gaussian) in seti_analyze()");
-        }
-    }
-    if (best_pulse->score) {
-        retval = outfile.printf("%s", best_pulse->p.print_xml(0,0,1,"best_pulse").c_str());
-        if (retval < 0) {
-            SETIERROR(WRITE_FAILED,"from outfile.printf (best pulse) in seti_analyze()");
-        }
-    }
-    if (best_triplet->score) {
-        retval = outfile.printf("%s", best_triplet->t.print_xml(0,0,1,"best_triplet").c_str());
-        if (retval < 0) {
-            SETIERROR(WRITE_FAILED,"from outfile.printf (best triplet) in seti_analyze()");
-        }
-    }
-
+  
+  for(icfft = state.icfft; icfft < num_cfft; icfft++) 
+    {		
+      fftlen    = ChirpFftPairs[icfft].FftLen;
+      chirprate = (float)ChirpFftPairs[icfft].ChirpRate;
+      chirprateind = ChirpFftPairs[icfft].ChirpRateInd;
+      //boinc_fpops_cumulative((SETUP_FLOPS+analysis_state.FLOP_counter)*LOAD_STORE_ADJUSTMENT);
+      // boinc_worker_timer();
+#ifdef DEBUG
+      double ptime=static_cast<double>((unsigned)clock())/CLOCKS_PER_SEC+clock_max*rollovers;
+      clock_max=std::max(last_ptime-ptime,clock_max);
+      if (ptime<last_ptime) 
+	{
+	  rollovers++;
+	  ptime=static_cast<double>((unsigned)clock())/CLOCKS_PER_SEC+ clock_max*rollovers;
+	}
+      last_ptime = ptime;
+      
+      fprintf(stderr,"%f %f %f %f %f %f %f %f %f\n",
+	      ptime,
+	      progress,
+	      ((double)icfft)/num_cfft,
+	      analysis_state.FLOP_counter,
+	      triplet_units,
+	      pulse_units,
+	      spike_units,
+	      gauss_units,
+	      chirp_units
+	      );
+      fflush(stderr);
+      
+      double cputime=0;
+      boinc_wu_cpu_time(cputime);
+      cputime-=cputime0;
+#endif
+      
+      remaining=1.0-(double)icfft/num_cfft;		
+      
+      if(chirprateind != last_chirp_ind) 
+	{
 #ifdef BOINC_APP_GRAPHICS
-    if (!nographics()) strcpy(sah_graphics->status, "Work unit done");
+	  if (!nographics()) strcpy(sah_graphics->status, "Chirping data");
+#endif            			
+	  SAFE_EXIT_CHECK;
+	  
+#ifdef USE_CUDA
+	  if(gSetiUseCudaDevice)
+	    {
+	      if(!cufftplans_done)
+		{
+		  //fprintf(stderr,"before async chirp\n");
+		  int FNum=0;
+		  int FLen=1;
+		  cudaStream_t chirpstream;
+		  cudaStreamCreate(&chirpstream);
+		  if(gCudaDevProps.major >= 2 || gCudaDevProps.minor >= 3)
+		    {
+		      cudaAcc_CalcChirpData_sm13_async(chirprate, 1/swi.subband_sample_rate, ChirpedData, chirpstream);
+		      prevchirprate = chirprate;
+		    }
+		  else
+		    cudaAcc_CalcChirpData_async(chirprate, 1/swi.subband_sample_rate, ChirpedData, chirpstream); //change to async version
+
+		  bitfield = swi.analysis_cfg.analysis_fft_lengths; // reset planning
+		  while(bitfield != 0) 
+		    {
+		      if(bitfield & 1)
+			{
+			  swi.analysis_fft_lengths[FNum]=FLen;
+			  // Create FFT plan configuration
+			  if(gSetiUseCudaDevice)
+			    {
+			      if(cudaAcc_fftwf_plan_dft_1d(FNum, FLen, NumDataPoints))
+				{
+				  // If we're here, something went wrong in the plan.
+				  // Possibly ran out of video memory.  Destroy what we
+				  // have and do a Boinc temporary exit.
+				  fprintf(stderr,"  A cuFFT plan FAILED, Initiating Boinc temporary exit (180 secs)\n"); 
+				  cudaAcc_free();
+#ifdef _WIN32
+				  fprintf(stderr,"  Preemptively Acknowledging temporary exit -> "); 
+				  worker_thread_exit_ack = true; 
+#endif							
+				  boinc_temporary_exit(180,"CuFFT Plan Failure, temporary exit");
+				}
+			    }
+			  FNum++;
+			}
+		      FLen *= 2;
+		      bitfield >>= 1;
+		    }
+		  cufftplans_done++;
+		  CUDA_ACC_SAFE_CALL((CUDASYNC), true); // Wait for first chirp to finish now that cufft plans are done
+		  analysis_state.FLOP_counter+=12.0*NumDataPoints;
+		  cudaStreamDestroy(chirpstream); //finished with the async chirp
+		  //fprintf(stderr,"after async chirp\n");
+		} 
+	      else 
+		{
+		  //fprintf(stderr,"before sync chirp\n");
+		  if(gCudaDevProps.major >= 2 || gCudaDevProps.minor >=3)
+		    {
+		      //printf("%f %f %d\r\n", prevchirprate, chirprate, NumDataPoints);
+		      if(chirprate + prevchirprate != 0.0f)
+			{
+			  //printf("Chirping %f\r\n", chirprate);
+			  cudaAcc_CalcChirpData_sm13(chirprate, 1/swi.subband_sample_rate, ChirpedData); // P: now does pos and neg at the same time
+			  chirpoffset = 0;
+			  prevchirprate = chirprate;
+			}
+		      else // p: use neagtive chirp from memory
+			{
+			  //printf("Skipping %f\r\n", chirprate);
+			  chirpoffset = 1179648;
+			}
+		    }
+		  else
+		    cudaAcc_CalcChirpData(chirprate, 1/swi.subband_sample_rate, ChirpedData); // ChirpedData left over for testing accuracy
+		  analysis_state.FLOP_counter+=12.0*NumDataPoints;
+		  //fprintf(stderr,"after sync chirp\n");
+		}
+	    }
+	  else
+	    {
+#endif //USE_CUDA
+	      retval = ChirpData(
+				 DataIn,
+				 ChirpedData,
+				 chirprateind,
+				 chirprate,
+				 NumDataPoints,
+				 swi.subband_sample_rate
+				 );
+	      if (retval) SETIERROR(retval, "from ChirpData()");
+#ifdef USE_CUDA
+	    }
+#endif //USE_CUDA
+	  
+	  progress += (double)(ProgressUnitSize * ChirpProgressUnits());
+	  chirp_units+=(double)(ProgressUnitSize * ChirpProgressUnits());
+	  progress = std::min(progress,1.0);
+	}
+      
+      //    last_chirp = chirprate;
+      last_chirp_ind = chirprateind;
+      
+      // Process this FFT length.
+      // For a given FFT length (at a given chirp), we construct
+      // PowerSpectrum[] which is a "waterfall" array of power spectra,
+      // each fftlen long on the frequency axis and sample time long
+      // on the time axis.
+      // As we go along, we check each spectra for spikes.
+      
+      state.icfft = icfft;     // update analysis state
+      
+      // Find index into FFT length table for the current
+      // FFT length.  This will be the same index needed
+      // for ooura's coeffecient and bit reverse tables.
+      for(FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) 
+	{
+	  if(swi.analysis_fft_lengths[FftNum] == fftlen) 
+	    {
+	      break;
+	    }
+	}
+      
+#ifdef BOINC_APP_GRAPHICS
+      if (!nographics()) 
+	{
+	  sah_graphics->fft_info.chirp_rate = chirprate;
+	  sah_graphics->fft_info.fft_len = fftlen;
+	  strcpy(sah_graphics->status, "Computing Fast Fourier Transform");
+	}
 #endif
-    final_report(); // flop and signal counts to stderr
-    retval = checkpoint();  // try a final checkpoint
+      
+      // If PoT freq bin is non-negative, we are into PoT analysis
+      // for this cfft pair and should not re-output an "ogh" line.
+      if(state.PoT_freq_bin == -1) 
+	{
+	  retval = result_group_start();
+	  if (retval) SETIERROR(retval,"from result_group_start");
+	}
+      
+      // Number of FFTs for this length
+      NumFfts   = NumDataPoints / fftlen;
+      
+#ifdef BOINC_APP_GRAPHICS
+      if(!nographics()) 
+	{
+	  rarray.init_data(fftlen, NumFfts);
+	}
+#endif
+      
+#ifdef USE_CUDA
+      if(gSetiUseCudaDevice)
+	{
+	  cudaAcc_execute_dfts(FftNum, chirpoffset);
+	  state.FLOP_counter+=5*(double)fftlen*log((double)fftlen)/log(2.0) * NumFfts;           
+	  
+	  cudaAcc_GetPowerSpectrum(NumDataPoints,0,fftstream0);
+	  
+	  state.FLOP_counter+=3.0*NumDataPoints;
+	  
+	  if (state.PoT_freq_bin == -1) 
+	    { 
+	      PowerSpectrumSumMax[0].z = -999;
+	      cudaAcc_summax(fftlen);
+	      state.FLOP_counter+=NumDataPoints;
+	      if(swi.analysis_cfg.spikes_per_spectrum > 1) 
+		{
+		  SETIERROR(retval,"from FindSpikes cudaAcc_summax doesn't support (swi.analysis_cfg.spikes_per_spectrum > 1");
+		}
+	    }
+	
+	  for(ifft = 0; ifft < NumFfts; ifft++) 
+	    {
+	      CurrentSub = fftlen * ifft;           
+	      
+	      if(state.PoT_freq_bin == -1) 
+		{
+		  if(fftlen == ac_fft_len) 
+		    {
+		      state.FLOP_counter+=((double)fftlen)*5*log((double)fftlen)/log(2.0)+2*fftlen;
+		      if(gCudaAutocorrelation)
+			{
+			  if(ifft == 0)
+			    cudaAcc_FindAutoCorrelations(AutoCorrelation, ac_fft_len);
+			}
+		    }
+		  state.FLOP_counter+=(double)fftlen;
+                  if(PowerSpectrumSumMax[0].z == -999)
+		    cudaStreamSynchronize(fftstream0);               
+		  retval = FindSpikes2(                       
+				       fftlen,
+				       ifft,
+				       swi,
+				       PowerSpectrumSumMax[ifft].x,
+				       PowerSpectrumSumMax[ifft].y,
+				       (int) PowerSpectrumSumMax[ifft].z
+							      );
+		  progress += SpikeProgressUnits(fftlen)*ProgressUnitSize/NumFfts;
+		  if (retval) SETIERROR(retval,"from FindSpikes");
+		  
+		  if(fftlen == ac_fft_len) 
+		    {
+		      state.FLOP_counter+=((double)fftlen)*5*log((double)fftlen)/log(2.0)+2*fftlen;
+		      if(gCudaAutocorrelation)
+			{
+			  // these 2 moved to an earlier point
+			  //			  if(ifft == 0)
+			  //  cudaAcc_FindAutoCorrelations(AutoCorrelation, ac_fft_len);
 
-    if (PowerSpectrum) free_a(PowerSpectrum);
-    if (use_transposed_pot) free_a(tPowerSpectrum);
-    if (AutoCorrelation) free_a(AutoCorrelation);
-
+			  //cudaMemcpy(AutoCorrelation,dev_AutoCorrIn,(ac_fft_len>>1)*sizeof(float),cudaMemcpyDeviceToHost);
+			  //Jason: postprocessing result reduction mostly moved to GPU, no large Device->Host Memcopy needed.
+			  //Just enough info for updating best & reporting signals.
+			  cudaAcc_GetAutoCorrelation(AutoCorrelation, ac_fft_len, ifft);
+			  retval = FindAutoCorrelation_c( AutoCorrelation, fftlen, ifft, swi  );
+			  if (retval) SETIERROR(retval,"from FindAutoCorrelation_c() - after Cuda");
+			} 
+		    }
+		}
+	    }
+	}
+      else
+	{
+#endif // USE_CUDA
+		  
+	  for (ifft = 0; ifft < NumFfts; ifft++) 
+	    {
+	      // boinc_worker_timer();
+	      CurrentSub = fftlen * ifft;
+#if !defined(USE_FFTWF) && !defined(USE_IPP)
+	      // FFTW and IPP now use out of place transforms.
+	      memcpy(
+		     WorkData,
+		     &ChirpedData[CurrentSub],
+		     (int)(fftlen * sizeof(sah_complex))
+		     );
+#endif
+	      
+	      state.FLOP_counter+=5*(double)fftlen*log((double)fftlen)/log(2.0);
 #ifdef USE_IPP
-    for (FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) {
-        if (FftSpec[FftNum]) ippsFFTFree_C_32fc (FftSpec[FftNum]);
-    }
-    if (FftBuf) free_a(FftBuf);
-    FftBuf = NULL;
-#elif 0 //!defined(USE_FFTWF)
-    for (FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) {
-        if (BitRevTab[FftNum]) free_a(BitRevTab[FftNum]);
-    }
-	if (BitRevTab_ac) free_a(BitRevTab_ac);
-    for (FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) {
-        if (CoeffTab[FftNum]) free_a(CoeffTab[FftNum]);
-    }
-	if (CoeffTab_ac) free_a(CoeffTab_ac);
+	      ippsFFTInv_CToC_32fc((Ipp32fc*)ChirpedData[CurrentSub],
+				   (Ipp32fc*)WorkData,
+				   FftSpec[FftNum], FftBuf);
+#elif defined(USE_FFTWF)
+	      //fprintf(stderr,"executing fftw analysis_plan[FftNum=%d], length=%d ...",FftNum,fftlen);
+	      fftwf_execute_dft(analysis_plans[FftNum], &ChirpedData[CurrentSub], WorkData);
+	      //fprintf(stderr,"done.\n");
+#else
+	      // replace time with freq - ooura FFT
+	      //cdft(fftlen*2, 1, WorkData, BitRevTab[FftNum], CoeffTab[FftNum]);
 #endif
-
-    if (WorkData) free_a(WorkData);
-    WorkData = NULL;
-
-    if (ChirpFftPairs) free(ChirpFftPairs);
-    //if ((app_init_data.host_info.m_nbytes != 0)  &&
-    //    (app_init_data.host_info.m_nbytes >= (double)(64*1024*1024))) {
-    //        FreeTrigArray();
-    //}
-
-    // jeffc
-    //retval = outfile.flush();
-	xml_indent(-2);
-    outfile.printf("</result>");
-    outfile.close();
-    //if (retval) SETIERROR(WRITE_FAILED,"from outfile.fflush in seti_analyze()");
-
-    return retval;
+	      
+	      // replace freq with power
+	      state.FLOP_counter+=(double)fftlen;
+	      GetPowerSpectrum( WorkData,
+				&PowerSpectrum[CurrentSub],
+				fftlen
+				);
+	      
+	      
+	      // any ETIs ?!
+	      // If PoT freq bin is non-negative, we are into PoT analysis
+	      // for this cfft pair and need not redo spike finding.
+	      if (state.PoT_freq_bin == -1) 
+		{
+		  state.FLOP_counter+=(double)fftlen;
+		  retval = FindSpikes(
+				      &PowerSpectrum[CurrentSub],
+				      fftlen,
+				      ifft,
+				      swi
+				      );
+		  progress += SpikeProgressUnits(fftlen)*ProgressUnitSize/NumFfts;
+		  if (retval) SETIERROR(retval,"from FindSpikes");
+		  
+		  if (fftlen==ac_fft_len) 
+		    {
+		      state.FLOP_counter+=((double)fftlen)*5*log((double)fftlen)/log(2.0)+2*fftlen;
+#ifdef USE_FFTWF
+		      fftwf_execute_r2r(autocorr_plan,&PowerSpectrum[CurrentSub],AutoCorrelation);
+#else
+		      fprintf(stderr,"fftw is disabled, reached a problem in CPU fallback, exiting with an error\n");
+		      SETIERROR(-1,"from Autocorrelation, lacks CPU Fallback FFT (no fftw)");
+#endif
+		      retval = FindAutoCorrelation( AutoCorrelation, fftlen, ifft, swi  );
+		      if (retval) SETIERROR(retval,"from FindAutoCorrelation");
+		    }
+		  
+		}
+	      
+	      //progress = ((float)icfft)/num_cfft + ((float)ifft)/(NumFfts*num_cfft);
+	      progress = std::min(progress,1.0);
+#ifdef BOINC_APP_GRAPHICS
+	      if (!nographics()) 
+		{
+		  rarray.add_source_row(PowerSpectrum+fftlen*ifft);
+		  sah_graphics->local_progress = (((float)ifft+1)/NumFfts);
+		}
+#endif
+	      remaining=1.0-(double)(icfft+1)/num_cfft;
+	      fraction_done(progress,remaining);
+	      // jeffc
+	      //fprintf(stderr, "S fft len %d  progress = %12.10f\n", fftlen, progress);
+	    } // loop through chirped data array
+#ifdef USE_CUDA
+	}
+#endif //USE_CUDA
+      
+#ifdef BOINC_APP_GRAPHICS
+      if (!nographics()) 
+	{
+	  memcpy(&sah_shmem->rarray_data, &rarray, sizeof(REDUCED_ARRAY_DATA));
+	}
+#endif
+      fraction_done(progress,remaining);
+      // jeffc
+      //fprintf(stderr, "Sdone fft len %d  progress = %12.10f\n", fftlen, progress);
+      
+      // transpose PoT matrix to make memory accesses nicer
+      need_transpose = ChirpFftPairs[icfft].GaussFit || ChirpFftPairs[icfft].PulseFind;
+      if ( !need_transpose ) 
+	{
+	  int tmpPulsePoTLen, tmpOverlap;                        
+	  GetPulsePoTLen( NumFfts, &tmpPulsePoTLen, &tmpOverlap );            
+	  if ( ! ( tmpPulsePoTLen > PoTInfo.TripletMax || tmpPulsePoTLen < PoTInfo.TripletMin ) )
+	    need_transpose = true;
+	}
+      
+      if (need_transpose && use_transposed_pot)
+	{
+#ifdef USE_CUDA
+	  if (!gSetiUseCudaDevice)
+#endif
+	    {
+	      Transpose(fftlen, NumFfts, (float *) PowerSpectrum, (float *)tPowerSpectrum);            
+	    }
+	  //  NOTE CUDA code path does not need to transpose the data
+	  //  else	
+	  //  {
+	  //	  // TODO: No need to transpose when everything is done on GPU
+	  //	  cudaAcc_transpose((float *)tPowerSpectrum, fftlen, NumFfts);
+	  //	}
+        }
+      
+      //
+      // Analyze Power over Time.  May return quickly if this FFT
+      // length and/or this WUs slew rate places the data block
+      // outside PoT analysis limits.
+      // Counting flops is done inside analyze_pot
+      retval = analyze_pot(tPowerSpectrum, NumDataPoints, ChirpFftPairs[icfft]);
+      if (retval) SETIERROR(retval,"from analyze_pot");
+      
+#ifdef BOINC_APP_GRAPHICS
+      // switch the display back to "best of" signals
+      //
+      if (!nographics()) 
+	{
+	  sah_graphics->gi.copy(best_gauss, true);
+	  sah_graphics->pi.copy(best_pulse, true);
+	  sah_graphics->ti.copy(best_triplet, true);
+	}
+#endif
+      // Force progress to 100% before calling result_group_end() to store
+      //  100% in state file so it will survive exit & relaunch
+      if (icfft == (num_cfft-1)) 
+	{
+	  progress = 1;
+	  remaining = 0;
+	  fraction_done(progress,remaining);
+	}
+      retval = checkpoint();
+      if (retval) SETIERROR(retval,"from checkpoint() in seti_analyse()");
+    } // loop over chirp/fftlen paris
+  
+#ifdef USE_CUDA
+  if (gSetiUseCudaDevice)
+    {
+      cudaAcc_free(); // Now includes freeing pulsefind, Gaussfit & autocorrelation as needed.
+    }
+#endif //USE_CUDA
+  
+  // Return the "best of" signals.  This may include duplicates of
+  // already reported interesting signals.
+  if (best_spike->score) 
+    {
+      retval = outfile.printf("%s", best_spike->s.print_xml(0,0,1,"best_spike").c_str());
+      if (retval < 0) 
+	{
+	  SETIERROR(WRITE_FAILED,"from outfile.printf (best spike) in seti_analyze()");
+	}
+      
+    }
+  
+  if (best_autocorr->score) 
+    {
+      retval = outfile.printf("%s", best_autocorr->a.print_xml(0,0,1,"best_autocorr").c_str());
+      if (retval < 0) {
+	SETIERROR(WRITE_FAILED,"from outfile.printf (best autocorr) in seti_analyze()");
+      }
+    }
+  
+  if (best_gauss->score) 
+    {
+      retval = outfile.printf("%s", best_gauss->g.print_xml(0,0,1,"best_gaussian").c_str());
+      if (retval < 0) {
+	SETIERROR(WRITE_FAILED,"from outfile.printf (best gaussian) in seti_analyze()");
+      }
+    }
+  if (best_pulse->score) 
+    {
+      retval = outfile.printf("%s", best_pulse->p.print_xml(0,0,1,"best_pulse").c_str());
+      if (retval < 0) {
+	SETIERROR(WRITE_FAILED,"from outfile.printf (best pulse) in seti_analyze()");
+      }
+    }
+  if (best_triplet->score) 
+    {
+      retval = outfile.printf("%s", best_triplet->t.print_xml(0,0,1,"best_triplet").c_str());
+      if (retval < 0) {
+	SETIERROR(WRITE_FAILED,"from outfile.printf (best triplet) in seti_analyze()");
+      }
+    }
+  
+#ifdef BOINC_APP_GRAPHICS
+  if (!nographics()) strcpy(sah_graphics->status, "Work unit done");
+#endif
+  final_report(); // flop and signal counts to stderr
+  retval = checkpoint();  // try a final checkpoint
+  
+  if (PowerSpectrum) free_a(PowerSpectrum);
+  if (use_transposed_pot) free_a(tPowerSpectrum);
+  if (AutoCorrelation) free_a(AutoCorrelation);
+  
+#ifdef USE_IPP
+  for (FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) 
+    {
+      if (FftSpec[FftNum]) ippsFFTFree_C_32fc (FftSpec[FftNum]);
+    }
+  if (FftBuf) free_a(FftBuf);
+  FftBuf = NULL;
+#elif 0 //!defined(USE_FFTWF)
+  for (FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) 
+    {
+      if (BitRevTab[FftNum]) free_a(BitRevTab[FftNum]);
+    }
+  if (BitRevTab_ac) free_a(BitRevTab_ac);
+  for (FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) 
+    {
+      if (CoeffTab[FftNum]) free_a(CoeffTab[FftNum]);
+    }
+  if (CoeffTab_ac) free_a(CoeffTab_ac);
+#endif
+  
+  if (WorkData) free_a(WorkData);
+  WorkData = NULL;
+  
+  if (ChirpFftPairs) free(ChirpFftPairs);
+  //if ((app_init_data.host_info.m_nbytes != 0)  &&
+  //    (app_init_data.host_info.m_nbytes >= (double)(64*1024*1024))) {
+  //        FreeTrigArray();
+  //}
+  
+  // jeffc
+  //retval = outfile.flush();
+  xml_indent(-2);
+  outfile.printf("</result>");
+  outfile.close();
+  //if (retval) SETIERROR(WRITE_FAILED,"from outfile.fflush in seti_analyze()");
+  
+  return retval;
 }
+
+
+
 
 int v_BaseLineSmooth(
                      sah_complex* DataIn,

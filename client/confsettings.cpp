@@ -102,10 +102,16 @@ void initConfig(int pcibusid,int pcislotid)
 		pfPeriodsPerLaunch = def;
 	}
 	fprintf(stderr,"pulsefind: periods per launch %d %s\n", pfPeriodsPerLaunch, (pfPeriodsPerLaunch == def) ? "(default)":"" );
-#else
+#else // not win, is other
 	confSetPriority = pt_BELOWNORMAL;
-	pfBlocksPerSM = (gCudaDevProps.major < 2) ? DEFAULT_PFBLOCKSPERSM:DEFAULT_PFBLOCKSPERSM_FERMI;
-	pfPeriodsPerLaunch = DEFAULT_PFPERIODSPERLAUNCH;
+	if(pfBlocksPerSM == 0)
+	  pfBlocksPerSM = (gCudaDevProps.major < 2) ? DEFAULT_PFBLOCKSPERSM:DEFAULT_PFBLOCKSPERSM_FERMI;
+	else
+	  fprintf(stderr, "Using pfb = %d from command line args\n", pfBlocksPerSM);
+	if(pfPeriodsPerLaunch == 0)
+	  pfPeriodsPerLaunch = DEFAULT_PFPERIODSPERLAUNCH;
+	else
+	  fprintf(stderr, "Using pfp = %d from command line args\n", pfPeriodsPerLaunch);
 #endif //_WIN32
 
 	return;

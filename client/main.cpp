@@ -79,6 +79,9 @@
 #include "gaussfit.h"
 #ifdef _WIN32
 	#include "confsettings.h"
+#else
+  extern int pfBlocksPerSM;
+  extern int pfPeriodsPerLaunch;
 #endif //_WIN32
 
 #ifdef __APPLE_CC__
@@ -228,12 +231,14 @@ int main(int argc, char** argv) {
 		confSetPriority = pt_ABOVENORMAL;
     } else if (!strncmp(p, "hig", 3)) {
 		confSetPriority = pt_HIGH;
-    } else if (!strncmp(p, "pfb", 3)) {
+    } 
+#endif
+    else if (!strncmp(p, "pfb", 3)) {
 		pfBlocksPerSM = atoi(argv[++i]);
     } else if (!strncmp(p, "pfp", 3)) {
 		pfPeriodsPerLaunch = atoi(argv[++i]);
     }
-#endif //_WIN32	
+ 
 	else {
       fprintf(stderr, "bad arg: %s\n", argv[i]);
  //     usage();

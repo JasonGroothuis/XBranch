@@ -21,7 +21,7 @@ extern volatile bool worker_thread_exit_ack;
 #define CUFFT_ERRORSTR(_code) (_code <= 9) ? cufft_codestr[_code]:"UNKNOWN"
 
     #define CUFFT_SAFE_CALL(_call) {                                             \
-	    cufftResult err = _call;												 \
+	    cufftResult err = _call;						 \
 		if( CUFFT_SUCCESS != err) {                                              \
 			fprintf(stderr, "CUFFT error in file '%s' in line %i. code %s\n",    \
 					__FILE__, __LINE__,CUFFT_ERRORSTR(err));                     \
@@ -34,7 +34,8 @@ extern volatile bool worker_thread_exit_ack;
 	}
 #else
 	#define CUFFT_SAFE_CALL( call) {                                           \
-		cufftResult err = call;                                                  \
+		 call;                                                  \
+                cudaError_t err = cudaGetLastError();	\
 		if( CUFFT_SUCCESS != err) {                                              \
 		fprintf(stderr, "CUFFT error in file '%s' in line %i.\n",            \
 					__FILE__, __LINE__);                                         \

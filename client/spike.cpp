@@ -67,7 +67,8 @@ int FindSpikes(
   int ul_NumDataPoints,
   int fft_num,
   SETI_WU_INFO& swi
-) {
+) 
+{
   //int i, j, k, m, bin, retval;
   int i, j, k, m, retval, blksize;
   float temp, partial;
@@ -80,15 +81,17 @@ int FindSpikes(
 
   blksize = UNSTDMAX(8, UNSTDMIN(pow2((unsigned int) sqrt((float) (ul_NumDataPoints / 32)) * 32), 512));
 
-  for(int b = 0; b < ul_NumDataPoints/blksize; b++) {
-	  partial = 0.0f;
-	  for(i = 0; i < blksize; i++) {
-		 partial += fp_PowerSpectrum[b*blksize+i];
-	  }
-	  total += partial;
-  }
+  for(int b = 0; b < ul_NumDataPoints/blksize; b++) 
+    {
+      partial = 0.0f;
+      for(i = 0; i < blksize; i++) 
+	{
+	  partial += fp_PowerSpectrum[b*blksize+i];
+	}
+      total += partial;
+    }
   MeanPower = total / ul_NumDataPoints;
-
+  
 //  for(i = 0; i < ul_NumDataPoints; i++) {
 //    total += fp_PowerSpectrum[i];
 //  }
@@ -103,61 +106,95 @@ int FindSpikes(
   // m : marks the current tail of the high power hit "list"
 
 
-  for (i = 0; i < swi.analysis_cfg.spikes_per_spectrum; i++) {
-
-    temp = 0.0;
-
-    // Walk the array, looking for the first/next highest power.
-    // Start j at 1, in order to skip the DC (ie 0) bin.
-    // NOTE: this is a simple scan for high powers.  Nice and fast
-    // for a very low i.  If i is substantial, this code should be
-    // replaced with an index (q)sort.  Do *not* sort the power
-    // spectrum itself in place - it's used elsewhere.
-    for (j = 1; j < ul_NumDataPoints; j++) {
-
-      if (fp_PowerSpectrum[j] > temp) {
-        if (fp_PowerSpectrum[j] < fp_PowerSpectrum[m] || m == 0) {
-          temp = fp_PowerSpectrum[j];
-          k = j;
-        }
-      }
-    } // temp now = first/next highest power and k = it's bin number
-
-    m = k; 		// save the "lowest" highest.
-
-    //  spike info
-    si.s.peak_power 	 = temp/MeanPower;
-    si.s.mean_power	 = 1.0;
-    si.bin 		 = k;
-    si.fft_ind 		 = fft_num;	
-    si.s.chirp_rate 	 = ChirpFftPairs[analysis_state.icfft].ChirpRate;
-    si.s.fft_len    	 = ChirpFftPairs[analysis_state.icfft].FftLen;
-    si.s.freq		 = cnvt_bin_hz(si.bin,  si.s.fft_len);
-    double t_offset=((double)si.fft_ind+0.5)*(double)si.s.fft_len/
-          swi.subband_sample_rate;
-    si.s.detection_freq=calc_detection_freq(si.s.freq,si.s.chirp_rate,t_offset);
-    si.s.time		 = swi.time_recorded + t_offset / 86400.0;
-    time_to_ra_dec(si.s.time, &si.s.ra, &si.s.decl);
-
-    // Score used for "best of" and graphics.
-    si.score 		 = si.s.peak_power / SPIKE_SCORE_HIGH;
-    si.score 	  	 = si.score > 0.0f ? (float)log10(si.score) : 0.0f;
-    // if best_spike.s.fft_len == 0, there is not yet a first spike
-    if (si.score > best_spike->score || best_spike->s.fft_len == 0) {
-      *best_spike 			= si;
+  for(i = 0; i < swi.analysis_cfg.spikes_per_spectrum; i++) 
+    {
+      
+      temp = 0.0f;
+      
+      // Walk the array, looking for the first/next highest power.
+      // Start j at 1, in order to skip the DC (ie 0) bin.
+      // NOTE: this is a simple scan for high powers.  Nice and fast
+      // for a very low i.  If i is substantial, this code should be
+      // replaced with an index (q)sort.  Do *not* sort the power
+      // spectrum itself in place - it's used elsewhere.
+      float mval = fp_PowerSpectrum[m];
+      for (j = 1; j < ul_NumDataPoints; j++) 
+	{
+	  float val = fp_PowerSpectrum[j];
+	  if (val > temp) 
+	    {
+	      if (val < mval || m == 0) 
+		{
+		  temp = val;
+		  k = j;
+		}
+	    }
+	} // temp now = first/next highest power and k = it's bin number
+      
+      m = k; 		// save the "lowest" highest.
+      float score = si.s.peak_power / SPIKE_SCORE_HIGH;
+      bool sidone = false;
+      // if best_spike.s.fft_len == 0, there is not yet a first spike
+      if (si.score > best_spike->score || best_spike->s.fft_len == 0) 
+	{
+	  //  spike info
+	  si.s.peak_power 	 = temp/MeanPower;
+	  si.s.mean_power	 = 1.0;
+	  si.bin 		 = k;
+	  si.fft_ind 		 = fft_num;	
+	  si.s.chirp_rate 	 = ChirpFftPairs[analysis_state.icfft].ChirpRate;
+	  si.s.fft_len    	 = ChirpFftPairs[analysis_state.icfft].FftLen;
+	  si.s.freq		 = cnvt_bin_hz(si.bin,  si.s.fft_len);
+	  double t_offset=((double)si.fft_ind+0.5)*(double)si.s.fft_len/
+	    swi.subband_sample_rate;
+	  si.s.detection_freq=calc_detection_freq(si.s.freq,si.s.chirp_rate,t_offset);
+	  si.s.time		 = swi.time_recorded + t_offset / 86400.0;
+	  time_to_ra_dec(si.s.time, &si.s.ra, &si.s.decl);
+	  
+	  // Score used for "best of" and graphics.
+	  si.score 		 = score;
+	  si.score 	  	 = si.score > 0.0f ? (float)log10(si.score) : 0.0f;
+	  
+	  *best_spike 			= si;
+	  sidone = true;
 #ifdef BOINC_APP_GRAPHICS
-      if (!nographics()) sah_graphics->si.copy(&si);
+	  if (!nographics()) sah_graphics->si.copy(&si);
 #endif
+	}
+      
+      // Report a signal if it excceeds threshold.
+      if(si.s.peak_power > (swi.analysis_cfg.spike_thresh)) 
+	{
+	  if(!sidone)
+	    {
+	      //  spike info
+	      si.s.peak_power 	 = temp/MeanPower;
+	      si.s.mean_power	 = 1.0;
+	      si.bin 		 = k;
+	      si.fft_ind 		 = fft_num;	
+	      si.s.chirp_rate 	 = ChirpFftPairs[analysis_state.icfft].ChirpRate;
+	      si.s.fft_len    	 = ChirpFftPairs[analysis_state.icfft].FftLen;
+	      si.s.freq		 = cnvt_bin_hz(si.bin,  si.s.fft_len);
+	      double t_offset=((double)si.fft_ind+0.5)*(double)si.s.fft_len/
+		swi.subband_sample_rate;
+	      si.s.detection_freq=calc_detection_freq(si.s.freq,si.s.chirp_rate,t_offset);
+	      si.s.time		 = swi.time_recorded + t_offset / 86400.0;
+	      time_to_ra_dec(si.s.time, &si.s.ra, &si.s.decl);
+	      
+	      // Score used for "best of" and graphics.
+	      si.score 		 = score;
+	      si.score 	  	 = si.score > 0.0f ? (float)log10(si.score) : 0.0f;
+	      
+	      *best_spike 			= si;
+	    }
+	  retval = result_spike(si);
+	  if (retval) SETIERROR(retval,"from result_spike()");
+	}
     }
-
-    // Report a signal if it excceeds threshold.
-    if (si.s.peak_power > (swi.analysis_cfg.spike_thresh)) {
-      retval = result_spike(si);
-      if (retval) SETIERROR(retval,"from result_spike()");
-    }
-  }
   return 0;
 }
+
+
 
 int 
 FindSpikes2( int            ul_NumDataPoints,
@@ -176,61 +213,68 @@ FindSpikes2( int            ul_NumDataPoints,
   // k : marks current high power candidate while j walks on
   // m : marks the current tail of the high power hit "list"
   
-    if (swi.analysis_cfg.spikes_per_spectrum > 0) {    
-        int        i = 0, 
-                   j = 0, 
-                   k = 0, 
-                   m = 0, 
-                   retval;
-        float      fMeanPower = total / ul_NumDataPoints;
-        float      fPeakPower = (temp / fMeanPower); //+0.005f;
-        float      fScore = fPeakPower / SPIKE_SCORE_HIGH;
-
-        fScore = (fScore > 0.0f) ? (float)log10( fScore ) : 0.0f;
-
-        // If we'll need this result, compute pertinent data and place in tmp_spike
-        if ( (fScore > best_spike->score) || 
-             (best_spike->s.fft_len == 0) || 
-             (fPeakPower > swi.analysis_cfg.spike_thresh) ) {
-            k = pos;
-            m = k; 		// save the "lowest" highest.
-
-            tmp_spike->s.peak_power = fPeakPower;
-            tmp_spike->s.mean_power = 1.0;
-            tmp_spike->score        = fScore;
-            tmp_spike->bin 		    = k;
-            tmp_spike->fft_ind 	    = fft_num;
-
-            tmp_spike->s.chirp_rate  = ChirpFftPairs[analysis_state.icfft].ChirpRate;
-            tmp_spike->s.fft_len     = ChirpFftPairs[analysis_state.icfft].FftLen;
-            tmp_spike->s.freq		 = cnvt_bin_hz( tmp_spike->bin,  tmp_spike->s.fft_len );
-            
-            double t_offset = ( (double)tmp_spike->fft_ind + 0.5 ) * 
-                                (double)tmp_spike->s.fft_len / swi.subband_sample_rate;
-            tmp_spike->s.detection_freq = calc_detection_freq( tmp_spike->s.freq, tmp_spike->s.chirp_rate, t_offset );
-            tmp_spike->s.time		    = swi.time_recorded + t_offset / 86400.0;
-
-            time_to_ra_dec( tmp_spike->s.time, &tmp_spike->s.ra, &tmp_spike->s.decl );
+  if (swi.analysis_cfg.spikes_per_spectrum > 0) 
+    {    
+      int        i = 0, 
+	j = 0, 
+	k = 0, 
+	m = 0, 
+	retval;
+      float      fMeanPower = total / ul_NumDataPoints;
+      float      fPeakPower = (temp / fMeanPower); //+0.005f;
+      float      fScore = fPeakPower / SPIKE_SCORE_HIGH;
+      
+      fScore = (fScore > 0.0f) ? (float)log10( fScore ) : 0.0f;
+      
+      // If we'll need this result, compute pertinent data and place in tmp_spike
+      if ( (fScore > best_spike->score) || 
+	   (best_spike->s.fft_len == 0) || 
+	   (fPeakPower > swi.analysis_cfg.spike_thresh) ) 
+	{
+	  k = pos;
+	  m = k; 		// save the "lowest" highest.
+	  
+	  tmp_spike->s.peak_power = fPeakPower;
+	  tmp_spike->s.mean_power = 1.0;
+	  tmp_spike->score        = fScore;
+	  tmp_spike->bin 		    = k;
+	  tmp_spike->fft_ind 	    = fft_num;
+	  
+	  tmp_spike->s.chirp_rate  = ChirpFftPairs[analysis_state.icfft].ChirpRate;
+	  tmp_spike->s.fft_len     = ChirpFftPairs[analysis_state.icfft].FftLen;
+	  tmp_spike->s.freq		 = cnvt_bin_hz( tmp_spike->bin,  tmp_spike->s.fft_len );
+          
+	  double t_offset = ( (double)tmp_spike->fft_ind + 0.5 ) * 
+	    (double)tmp_spike->s.fft_len / swi.subband_sample_rate;
+	  tmp_spike->s.detection_freq = calc_detection_freq( tmp_spike->s.freq, tmp_spike->s.chirp_rate, t_offset );
+	  tmp_spike->s.time		    = swi.time_recorded + t_offset / 86400.0;
+	  
+	  time_to_ra_dec( tmp_spike->s.time, &tmp_spike->s.ra, &tmp_spike->s.decl );
         }
-
-        // This is the best spike, so copy to best_spike
-        if ( (fScore > best_spike->score) || (best_spike->s.fft_len == 0) ) {
-            *best_spike = *tmp_spike;
-
+      
+      // This is the best spike, so copy to best_spike
+      if ( (fScore > best_spike->score) || (best_spike->s.fft_len == 0) ) 
+	{
+	  *best_spike = *tmp_spike;
+	  
 #ifdef BOINC_APP_GRAPHICS
-            if( !nographics() ) {
-                sah_graphics->si.copy( tmp_spike, true );
-            }
+	  if( !nographics() ) 
+	    {
+	      sah_graphics->si.copy( tmp_spike, true );
+	    }
 #endif
         }
-
-        // Report a signal if it exceeds threshold
-        if( fPeakPower > swi.analysis_cfg.spike_thresh ) {
-            retval = result_spike( *tmp_spike );
-            if( retval ) {
-                SETIERROR(retval,"from result_spike()");
+      
+      // Report a signal if it exceeds threshold
+      if( fPeakPower > swi.analysis_cfg.spike_thresh ) 
+	{
+	  retval = result_spike( *tmp_spike );
+	  if( retval ) 
+	    {
+	      SETIERROR(retval,"from result_spike()");
             }
         }
     }
-    return 0;
+
+  return 0;
 }

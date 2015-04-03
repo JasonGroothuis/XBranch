@@ -54,7 +54,7 @@ typedef struct {
     float PeakScaleFactor;
     float GaussChiSqThresh;
     float gauss_null_chi_sq_thresh;
-	float gauss_chi_sq_thresh;
+    float gauss_chi_sq_thresh;
     float* dev_PoT;
     float* dev_PoTPrefixSum;
     float* dev_PowerSpectrum;
@@ -63,9 +63,10 @@ typedef struct {
     float4* dev_GaussFitResultsReordered2;
     float* dev_NormMaxPower;    
     float* dev_outputposition;
-	float score_offset;
+    float *dev_tmp_pot2; //2xxxx
+    float score_offset;
     int NumDataPoints;
-	float f_weight[CUDA_ACC_MAX_GaussTOffsetStop]; // cached  static_cast<float>(EXP(i, 0, PoTInfo.GaussSigmaSq));
+    float f_weight[CUDA_ACC_MAX_GaussTOffsetStop]; // cached  static_cast<float>(EXP(i, 0, PoTInfo.GaussSigmaSq));
     unsigned int nsamples;
 } cudaAcc_GaussFit_t;
 
@@ -97,6 +98,7 @@ extern float4* dev_PulseResults; // In the same place as dev_GaussFitResults
 extern float4* TripletResults; // In the same place as PulseResults
 extern float4* PulseResults; // In the same place as PulseResults
 extern float* dev_tmp_pot;
+extern float* dev_tmp_pot2; // 2xxx
 extern float* dev_best_pot;
 extern float* dev_report_pot;
 //extern float2* dev_sample_rate;
@@ -104,10 +106,12 @@ extern float* dev_report_pot;
 extern float* dev_NormMaxPower;
 extern float3* dev_PowerSpectrumSumMax;
 
-extern float2* dev_AutoCorrIn;
-extern float2* dev_AutoCorrOut;
 extern bool gCudaAutocorrelation;
+extern float2* dev_AutoCorrIn[8];
+extern float2* dev_AutoCorrOut[8];
+//extern cufftHandle cudaAutoCorr_plan[8];
 extern cufftHandle cudaAutoCorr_plan;
+//extern cudaStream_t cudaAutocorrStream[8];
 
 extern float* dev_flagged;
 extern float* dev_outputposition;
@@ -115,6 +119,8 @@ extern result_flag* dev_flag;
 extern float* tmp_small_PoT;
 extern float* tmp_PoT;
 extern float* best_PoT;
+extern float* tmp_PoT2; // triplets
+extern float* best_PoT2; // triplets
 
 extern float4* GaussFitResults;
 
@@ -126,6 +132,7 @@ extern int cudaAcc_initialized();
 extern cudaAcc_GaussFit_t settings;
 
 extern void cudaAcc_transposeGPU(float *odata, float *idata, int width, int height);
+extern void cudaAcc_transposeGPU(float *odata, float *idata, int width, int height, cudaStream_t stream);
 
 extern void cudaAcc_CalcChirpData_sm13(double chirp_rate, double recip_sample_rate, sah_complex* cx_ChirpDataArray, int NumDataPoints);
 

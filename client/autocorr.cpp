@@ -61,8 +61,9 @@
 #endif 
 
 #if USE_CUDA
-	#include <cufft.h>
-	cufftHandle cudaAutoCorr_plan = 0; // cufftHandle is not a pointer. Cannot be set to "NULL"
+#include <cufft.h>
+cufftHandle cudaAutoCorr_plan = 0; // cufftHandle is not a pointer. Cannot be set to "NULL"	
+cufftHandle cudaAutoCorr_planR = 0; // cufftHandle is not a pointer. Cannot be set to "NULL"
 #endif
 
 int FindAutoCorrelation(
@@ -183,10 +184,6 @@ int FindAutoCorrelation_c(
   int i, j, k, m, retval; 
   float temp;
   float total;
-#if 0
-  int blksize;
-  float partial;
-#endif
   float MeanPower; 
 
   AUTOCORR_INFO ai;
@@ -194,110 +191,48 @@ int FindAutoCorrelation_c(
   i = j = k = m = 0;
   total = 0.0f;
 
-//  static bool acGpuDone = false;
-//  FILE *acfileg;
-//  if (!acGpuDone) acfileg = fopen("ac_gpu.txt","w");
-
   int len = ul_NumDataPoints/2;
-
-//  cudaMemcpy(AutoCorrelation,dev_AutoCorrIn,len*sizeof(float),cudaMemcpyDeviceToHost);
-
-#if 0
-  blksize = UNSTDMAX(4, UNSTDMIN(pow2((unsigned int) sqrt((float) (len / 32)) * 32), 512));
-
-  for(int b = 0; b < len/blksize; b++) {
-      partial = 0.0f;
-	  for(i = 0; i < blksize; i++) {
-//		if (!acGpuDone) fprintf(acfileg,"gpu[%10d], %10.6f\n", b*blksize+i,AutoCorrelation[b*blksize+i]);
-		// AutoCorrelation[b*blksize+i]*=AutoCorrelation[b*blksize+i]; //do on GPU.
-		partial += AutoCorrelation[b*blksize+i];
-	  }
-	  total += partial;
-  }
-  ac_TotalSum = total;
-#endif
-  //MeanPower = ac_TotalSum / ul_NumDataPoints;
-  MeanPower = blockSums[0].x / ul_NumDataPoints;
-
-//  if (!acGpuDone) { fclose(acfileg); acGpuDone = true; }
-
-//  fprintf(stderr,"GPU autcorr mean power %10.6f\n",MeanPower);
-
-  // Here we extract the autocorrs_to_report highest power events,
-  // outputing them as we go.
-  // Index usage:
-  // i : walk power spectrum us_NumToReport times
-  // j : walks power spectrum for each i
-  // k : marks current high power candidate while j walks on
-  // m : marks the current tail of the high power hit "list"
-
+  MeanPower = blockSums[fft_num][0].x / ul_NumDataPoints;
+  
   if (swi.analysis_cfg.autocorr_per_spectrum != 1) SETIERROR(-1,"Cuda Autocorrelation only supports 1 autocorr_per_spectrum");
 
-//  for (i = 0; i < swi.analysis_cfg.autocorr_per_spectrum; i++) {
-
-#if 0
-    temp = 0.0f;
-
-    // Walk the array, looking for the first/next highest power.
-    // Start j at 1, in order to skip the DC (ie 0) bin.
-    // NOTE: this is a simple scan for high powers.  Nice and fast
-    // for a very low i.  If i is substantial, this code should be
-    // replaced with an index (q)sort.  
-
-    for (j = 1; j < ul_NumDataPoints/2; j++) {
-      if (AutoCorrelation[j] > temp) {
-        if (AutoCorrelation[j] < AutoCorrelation[m] || m == 0) {
-          temp = AutoCorrelation[j];
-          k = j;
-        }
-      }
-    } // temp now = first/next highest power and k = it's bin number
-
-    m = k; 		// save the "lowest" highest.
-#endif
-	// with 1 spike per spectrum Only need k = bin index with highest power...
-	//k = ac_PeakBin;
-	k = (int)blockSums[0].z;
-	//... and temp = peak power excl. 0 lag
-	//temp = ac_Peak;
-	temp = blockSums[0].y;
-
-    //  autocorr info
-    ai.a.peak_power 	 = temp/MeanPower;
-    ai.a.mean_power	 = 1.0;
-    ai.bin 		 = k;
-    ai.fft_ind 		 = fft_num;	
-    ai.a.chirp_rate 	 = ChirpFftPairs[analysis_state.icfft].ChirpRate;
-    ai.a.fft_len    	 = ChirpFftPairs[analysis_state.icfft].FftLen;
-    ai.a.delay		 = ((float)ai.bin)/swi.subband_sample_rate;
-    ai.a.freq            = swi.subband_center;
-    double t_offset=((double)ai.fft_ind+0.5)*(double)ai.a.fft_len/
-          swi.subband_sample_rate;
-    ai.a.detection_freq=calc_detection_freq(ai.a.freq,ai.a.chirp_rate,t_offset);
-    ai.a.time		 = swi.time_recorded + t_offset / 86400.0;
-    time_to_ra_dec(ai.a.time, &ai.a.ra, &ai.a.decl);
-
-    // Score used for "best of" and graphics.
-    ai.score 		 = ai.a.peak_power / AUTOCORR_SCORE_HIGH;
-    ai.score 	  	 = ai.score > 0.0f ? (float)log10(ai.score) : 0.0f;
-    // if best_autocorr.s.fft_len == 0, there is not yet a first autocorr
-    if (ai.score > best_autocorr->score || best_autocorr->a.fft_len == 0) {
-      *best_autocorr 			= ai;
-//		fprintf(stderr,"Best AC set, score = %10.4f\n",best_autocorr->score );
+  // with 1 spike per spectrum Only need k = bin index with highest power...
+  k = (int)blockSums[fft_num][0].z;
+  temp = blockSums[fft_num][0].y;
+  
+  //  autocorr info
+  ai.a.peak_power 	 = temp/MeanPower;
+  ai.a.mean_power	 = 1.0;
+  ai.bin 		 = k;
+  ai.fft_ind 		 = fft_num;	
+  ai.a.chirp_rate 	 = ChirpFftPairs[analysis_state.icfft].ChirpRate;
+  ai.a.fft_len    	 = ChirpFftPairs[analysis_state.icfft].FftLen;
+  ai.a.delay		 = ((float)ai.bin)/swi.subband_sample_rate;
+  ai.a.freq            = swi.subband_center;
+  double t_offset=((double)ai.fft_ind+0.5)*(double)ai.a.fft_len/swi.subband_sample_rate;
+  ai.a.detection_freq=calc_detection_freq(ai.a.freq,ai.a.chirp_rate,t_offset);
+  ai.a.time		 = swi.time_recorded + t_offset / 86400.0;
+  time_to_ra_dec(ai.a.time, &ai.a.ra, &ai.a.decl);
+  
+  // Score used for "best of" and graphics.
+  ai.score 		 = ai.a.peak_power / AUTOCORR_SCORE_HIGH;
+  ai.score 	  	 = ai.score > 0.0f ? (float)log10(ai.score) : 0.0f;
+  // if best_autocorr.s.fft_len == 0, there is not yet a first autocorr
+  if (ai.score > best_autocorr->score || best_autocorr->a.fft_len == 0) {
+    *best_autocorr 			= ai;
+    //		fprintf(stderr,"Best AC set, score = %10.4f\n",best_autocorr->score );
 #ifdef BOINC_APP_GRAPHICS
-      if (!nographics()) sah_graphics->ai.copy(&ai);
+    if (!nographics()) sah_graphics->ai.copy(&ai);
 #endif
-    }
-
-    // Report a signal if it excceeds threshold.
-    if (ai.a.peak_power > (swi.analysis_cfg.autocorr_thresh)) {
+  }
+  
+  // Report a signal if it excceeds threshold.
+  if (ai.a.peak_power > (swi.analysis_cfg.autocorr_thresh)) 
+    {
       retval = result_autocorr(ai);
       if (retval) SETIERROR(retval,"from result_autocorr()");
     }
-#if 0
-  }
-#endif
-//  fprintf(stderr,"GPU autcorr peak power %10.6f\n",ai.a.peak_power);
+  //  fprintf(stderr,"GPU autcorr peak power %10.6f\n",ai.a.peak_power);
   return 0;
 }
 #endif

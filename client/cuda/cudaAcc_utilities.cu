@@ -71,7 +71,7 @@ int cudaAcc_SafeCall_Sync(cudaError_t err, char* errMessage, char* file, int lin
 }
 
 int cudaAcc_SafeCall_No_Sync(char* errMessage, char* file, int line) {
-	return cudaAcc_SafeCall_No_Sync(cudaGetLastError(), errMessage, file, line);
+	return cudaAcc_SafeCall_No_Sync_wExit(cudaGetLastError(), errMessage, file, line);
 }
 
 int cudaAcc_SafeCall_Sync(char* errMessage, char* file, int line) {

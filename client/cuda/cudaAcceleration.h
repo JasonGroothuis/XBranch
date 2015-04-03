@@ -43,8 +43,8 @@
 extern double *angle_range;
 extern unsigned cmem_rtotal;
 
-extern cudaStream_t fftstream0;
-//extern cudaStream_t fftstream1;
+extern cudaStream_t fftstream0; // fft, autocorr, triplet
+extern cudaStream_t fftstream1; // gauss
 
 //Public function prototypes
 int  cudaAcc_initializeDevice(int devPref, int usePolling);
@@ -63,17 +63,25 @@ void cudaAcc_CalcChirpData_async(double chirp_rate, double recip_sample_rate, sa
 void cudaAcc_CalcChirpData_sm13(double chirp_rate, double recip_sample_rate, sah_complex* cx_ChirpDataArray);
 void cudaAcc_CalcChirpData_sm13_async(double chirp_rate, double recip_sample_rate, sah_complex* cx_ChirpDataArray, cudaStream_t chirpstream);
 int cudaAcc_fftwf_plan_dft_1d(int FftNum, int FftLen, int NumDataPoints);
-void cudaAcc_execute_dfts(int FftNum);
+void cudaAcc_execute_dfts(int FftNum, int offset);
 void cudaAcc_GetPowerSpectrum(int numpoints, int offset, cudaStream_t str);
 void cudaAcc_SetPowerSpectrum(float* PowerSpectrum);
 int  cudaAcc_initializeGaussfit(const PoTInfo_t& PoTInfo, int gauss_pot_length, unsigned int nsamples, double gauss_null_chi_sq_thresh, double gauss_chi_sq_thresh);
-int cudaAcc_Gaussfit(int gauss_pot_length, double best_gauss_score, bool noscore);
+int cudaAcc_GaussfitStart(int gauss_pot_length, double best_gauss_score, bool noscore);
+int cudaAcc_fetchGaussfitFlags(int gauss_pot_length, double best_gauss_score);
+int cudaAcc_processGaussFit(int gauss_pot_length, double best_gauss_score);
 void cudaAcc_summax(int fftlen);
+void cudaAcc_summax_x(int fftlen);
+int cudaAcc_calculate_mean(int PulsePoTLen, float triplet_thresh, int AdvanceBy, int FftLength);
 int cudaAcc_find_triplets(int PulsePotLen, float triplet_thresh, int AdvanceBy, int ul_FftLength);
-int cudaAcc_find_pulse(float best_pulse_score, int PulsePotLen, int AdvanceBy, int fft_length);
+int cudaAcc_fetchTripletAndPulseFlags(bool SkipTriplet, bool SkipPulse, int PulsePoTLen, int AdvanceBy, int FftLength);
+int cudaAcc_processTripletResults(int PulsePoTLen, int AdvanceBy, int FftLength);//int PulsePotLen, float triplet_thresh, int AdvanceBy, int ul_FftLength);
+int cudaAcc_find_pulses(float best_pulse_score, int PulsePotLen, int AdvanceBy, int fft_length);
+int cudaAcc_processPulseResults(int PulsePoTLen, int AdvanceBy, int FftLength);//int PulsePotLen, float triplet_thresh, int AdvanceBy, int ul_FftLength);
 
 //V7 Autocorrelation 
-int cudaAcc_FindAutoCorrelation( float *AutoCorrelation, int ac_fftlen, int fft_num );
+int cudaAcc_FindAutoCorrelations(float *AutoCorrelation, int ac_fftlen);
+int cudaAcc_GetAutoCorrelation(float *AutoCorrelation, int ac_fftlen, int fft_num);
 
 //Referenced globals
 extern float3* PowerSpectrumSumMax;
@@ -82,8 +90,8 @@ extern cudaDeviceProp gCudaDevProps;
 //extern float ac_TotalSum;
 //extern float ac_Peak;
 //extern int ac_PeakBin;
-extern float3 *dev_ac_partials;
-extern float3 *blockSums;
+extern float3 *dev_ac_partials[8];
+extern float3 *blockSums[8];
 // DEFINES
 #define USE_CUDA 1   // Allows the CUDA code path to be compiled in and used if defined
 
