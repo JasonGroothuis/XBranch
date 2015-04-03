@@ -86,6 +86,7 @@
     <ProjectGuid>{EE96AAE0-7D9F-48AA-8ECD-7EECED30289C}</ProjectGuid>
     <RootNamespace>seti_boinc</RootNamespace>
     <Keyword>MFCProj</Keyword>
+    <CudaToolkitCustomDir>$(CUDA_PATH_V7_0)</CudaToolkitCustomDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_v6_0|Win32'" Label="Configuration">
@@ -420,13 +421,19 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|x64'" />
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Lunatics_x41zc_win32_cuda70</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|Win32'">Lunatics_x41zc_win32_cuda65</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Lunatics_x41zc_winx64_cuda70</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|x64'">Lunatics_x41zc_winx64_cuda65</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v5_0|Win32'">Lunatics_x41zc_win32_cuda50r6no_ac_cfft</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Lunatics_x41zd_win32_cuda70</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|Win32'">Lunatics_x41zd_win32_cuda65</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Lunatics_x41zd_winx64_cuda70</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|x64'">Lunatics_x41zd_winx64_cuda65</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v5_0|Win32'">Lunatics_x41zd_win32_cuda50</TargetName>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release_v5_0|Win32'">$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release_v5_0|Win32'">$(LibraryPath)</LibraryPath>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v6_0|Win32'">Lunatics_x41zd_win32_cuda60</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v4_2|Win32'">Lunatics_x41zd_win32_cuda42</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v4_1|Win32'">Lunatics_x41zd_win32_cuda41</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v3_2|Win32'">Lunatics_x41zd_win32_cuda32</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v2_3|Win32'">Lunatics_x41zd_win32_cuda23</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_v2_2|Win32'">Lunatics_x41zd_win32_cuda22</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Cudart_Build_Rule___default_all_>
@@ -647,10 +654,10 @@
     </Link>
     <CudaCompile>
       <MaxRegCount>32</MaxRegCount>
-      <CodeGeneration>compute_50,sm_50;compute_52,sm_52</CodeGeneration>
       <FastMath>true</FastMath>
       <CudaRuntime>Static</CudaRuntime>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_20,sm_20;compute_20,sm_21;compute_30,sm_30;compute_35,sm_35;compute_50,sm_50;compute_52,sm_52;compute_52,compute_52</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <Optimization>O2</Optimization>
@@ -1818,11 +1825,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\amd64fft8g.cpp" />
+    <ClCompile Include="..\amd64fft8g.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\analyzeFuncs.cpp" />
-    <ClCompile Include="..\vector\analyzeFuncs_altivec.cpp" />
-    <ClCompile Include="..\vector\analyzeFuncs_fpu.cpp" />
-    <ClCompile Include="..\vector\analyzeFuncs_sse.cpp" />
+    <ClCompile Include="..\vector\analyzeFuncs_altivec.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\vector\analyzeFuncs_fpu.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\vector\analyzeFuncs_sse.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\vector\analyzeFuncs_vector.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4146;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4146;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -1844,8 +1859,11 @@
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|Win32'">4146;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4146;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|x64'">4146;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\vector\analyzeFuncs_x86_64.cpp" />
+    <ClCompile Include="..\vector\analyzeFuncs_x86_64.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\analyzePoT.cpp" />
     <ClCompile Include="..\analyzeReport.cpp" />
     <ClCompile Include="..\autocorr.cpp" />
@@ -2083,7 +2101,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v5_0|Win32'">true</ExcludedFromBuild>
     </Library>
-    <Library Include="libs\libboincapi_SSE_vs2k8.lib" />
+    <Library Include="libs\libboincapi_SSE_vs2k8.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Library>
     <Library Include="libs\libboincapi_SSE_x64.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|Win32'">true</ExcludedFromBuild>
@@ -2094,7 +2114,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v5_0|Win32'">true</ExcludedFromBuild>
     </Library>
-    <Library Include="libs\libboinc_SSE_vs2k8.lib" />
+    <Library Include="libs\libboinc_SSE_vs2k8.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Library>
     <Library Include="libs\libboinc_SSE_x64.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|Win32'">true</ExcludedFromBuild>
@@ -2105,7 +2127,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v5_0|Win32'">true</ExcludedFromBuild>
     </Library>
-    <Library Include="libs\libgraphics2_SSE_vs2k8.lib" />
+    <Library Include="libs\libgraphics2_SSE_vs2k8.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Library>
     <Library Include="libs\libgraphics2_SSE_x64.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|Win32'">true</ExcludedFromBuild>
@@ -2116,7 +2140,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v5_0|Win32'">true</ExcludedFromBuild>
     </Library>
-    <Library Include="libs\setiboincdb_SSE_vs2k8.lib" />
+    <Library Include="libs\setiboincdb_SSE_vs2k8.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Library>
     <Library Include="libs\setiboincdb_SSE_x64.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_v6_5|Win32'">true</ExcludedFromBuild>

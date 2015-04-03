@@ -9,3 +9,5 @@ Release
 /client/win_build/seti_boinc.vcproj.8.00.old
 /client/win_build/seti_boinc.vcproj.Apollo.Jason.user
 /client/win_build/seti_boinc.vcxproj.user
+/client/win_build/*.opensdf
+/client/win_build/*.pdb

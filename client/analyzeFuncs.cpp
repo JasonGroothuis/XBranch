@@ -104,7 +104,13 @@ const char *SAH_PACKAGE_STRING=CUSTOM_STRING;
 #pragma message ("----FFTW----")
 #include "fftw3.h"
 #elif defined(USE_CUDA)
-#pragma message ("----CUFFT----")
+	#pragma message ("----CUFFT----")
+	// Use ooura FFT for baseline smoothing in Cuda builds...
+	// Until we replace with an entirely GPU side version.
+	// may also be kept for tiny sanity checks to come
+	// not fast, though low-no setup/planning  cost is good for once off.
+	#pragma message ("----ooura----")
+	#include "fft8g.h"  
 #else
 #pragma message ("----ooura----")
 #include "fft8g.h"
@@ -695,7 +701,7 @@ int seti_analyze (ANALYSIS_STATE& state)
     //		fprintf(stderr," )       _   _  _)_ o  _  _ \n");
     //		fprintf(stderr,"(__ (_( ) ) (_( (_  ( (_ (  \n");
     //		fprintf(stderr," not bad for a human...  _) \n\n");
-    fprintf(stderr,"setiathome enhanced x41zc, Cuda %c.%c%c %s\n\n",custr[0],custr[2],custr[3],(CUDART_VERSION >= 6050) ? "special":"");
+    fprintf(stderr,"setiathome enhanced x41zd, Cuda %c.%c%c\n\n",custr[0],custr[2],custr[3]/*,(CUDART_VERSION >= 6050) ? "special":""*/);
     if (ac_fft_len) fprintf(stderr,"Detected setiathome_enhanced_v7 task. Autocorrelations enabled, size %dk elements.\n",(int)(ac_fft_len/1024));
     else fprintf(stderr,"Legacy setiathome_enhanced V6 mode.\n");
     fprintf(stderr,"Work Unit Info:\n");
@@ -703,8 +709,8 @@ int seti_analyze (ANALYSIS_STATE& state)
     fprintf(stderr,"WU true angle range is :  %f\n", swi.angle_range);
   } else 
     {
-      fprintf(stderr,"Restarted at %.2f percent, with setiathome enhanced x41zc, Cuda %c.%c%c %s\n",
-	      progress*100,custr[0],custr[2],custr[3],(CUDART_VERSION >= 6050) ? "special":"");
+      fprintf(stderr,"Restarted at %.2f percent, with setiathome enhanced x41zd, Cuda %c.%c%c\n",
+	      progress*100,custr[0],custr[2],custr[3]/*,(CUDART_VERSION >= 6050) ? "special":""*/);
       if (ac_fft_len) fprintf(stderr,"Detected setiathome_enhanced_v7 task. Autocorrelations enabled, size %dk elements.\n",(int)(ac_fft_len/1024));
       else fprintf(stderr,"Legacy setiathome_enhanced V6 mode.\n");
     }

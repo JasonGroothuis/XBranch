@@ -143,8 +143,6 @@ __device__ float cudaAcc_GetChiSq(float * __restrict__ fp_PoT, const int ul_FftL
   float recip_powerlen = 1.0f/64.0f; //__frcp_rn(ul_PowerLen);
   f_PeakPower *= recip_MeanPower;
 
-  int iidx = 0;
-
   // ChiSq in this realm is:
   //  sum[0:i]( (observed power - expected power)^2 / expected variance )
   // The power of a signal is:
@@ -310,7 +308,7 @@ __global__ void GetFixedPoT_kernel(void)
 
   while(i < ul_PoTChunkSize)
     {
-      float4 p1, p2;
+      float4 p1;
       p1 = *ppp; ppp += ul_FftLength/4; 
       partials1 += p1.x; 
       partials2 += p1.y; 
