@@ -285,99 +285,99 @@ int cudaAcc_calculate_mean(int PulsePoTLen, float triplet_thresh, int AdvanceBy,
 	{
 	case 8:
 	  if(PulsePoTLen == 131072)
-	    calculate_mean_kernel<8, FTKTHR, 131072><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<8, FTKTHR, 131072><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<8, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<8, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 16:
 	  if(PulsePoTLen == 65536)
-	    calculate_mean_kernel<16, FTKTHR, 65536><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<16, FTKTHR, 65536><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<16, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<16, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 32:
 	  if(PulsePoTLen == 32768)
-	    calculate_mean_kernel<32, FTKTHR, 32768><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<32, FTKTHR, 32768><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<32, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<32, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 64:
 	  if(PulsePoTLen == 16384)
-	    calculate_mean_kernel<64, FTKTHR, 16384><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<64, FTKTHR, 16384><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<64, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<64, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 128:
 	  if(PulsePoTLen == 8192)
-	    calculate_mean_kernel<128, FTKTHR, 8192><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<128, FTKTHR, 8192><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<128, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<128, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 256:
 	  if(PulsePoTLen == 4096)
-	    calculate_mean_kernel<256, FTKTHR, 4096><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<256, FTKTHR, 4096><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<256, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<256, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 512:
 	  if(PulsePoTLen == 2048)
-	    calculate_mean_kernel<512, FTKTHR, 2048><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<512, FTKTHR, 2048><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<512, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<512, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 1024:
 	  if(PulsePoTLen == 1024)
-	    calculate_mean_kernel<1024, FTKTHR, 1024><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<1024, FTKTHR, 1024><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<1024, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<1024, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 2048:
 	  if(PulsePoTLen == 512)
-	    calculate_mean_kernel<2048, FTKTHR, 512><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<2048, FTKTHR, 512><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<2048, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<2048, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 4096:
 	  if(PulsePoTLen == 256)
-	    calculate_mean_kernel<4096, FTKTHR, 256><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<4096, FTKTHR, 256><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<4096, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<4096, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 8192:
 	  if(PulsePoTLen == 128)
-	    calculate_mean_kernel<8192, FTKTHR, 128><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<8192, FTKTHR, 128><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<8192, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<8192, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 16384:
 	  if(PulsePoTLen == 64)
-	    calculate_mean_kernel<16384, FTKTHR, 64><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<16384, FTKTHR, 64><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<16384, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<16384, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 32768:
 	  if(PulsePoTLen == 32)
-	    calculate_mean_kernel<32768, FTKTHR, 32><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<32768, FTKTHR, 32><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<32768, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<32768, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 65536:
 	  if(PulsePoTLen == 16)
-	    calculate_mean_kernel<65536, FTKTHR, 16><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<65536, FTKTHR, 16><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<65536, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<65536, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 131072:
 	  if(PulsePoTLen == 16)
-	    calculate_mean_kernel<131072, FTKTHR, 16><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<131072, FTKTHR, 16><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<131072, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<131072, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	case 262144:
 	  if(PulsePoTLen == 16)
-	    calculate_mean_kernel<262144, FTKTHR, 16><<<grid, block>>>(AdvanceBy);
+	    calculate_mean_kernel<262144, FTKTHR, 16><<<grid, block, 0, fftstream0>>>(AdvanceBy);
 	  else
-	    calculate_mean_kernel<262144, FTKTHR><<<grid, block>>>(PulsePoTLen, AdvanceBy);
+	    calculate_mean_kernel<262144, FTKTHR><<<grid, block, 0, fftstream0>>>(PulsePoTLen, AdvanceBy);
 	  break;
 	}
     } 
@@ -387,7 +387,7 @@ int cudaAcc_calculate_mean(int PulsePoTLen, float triplet_thresh, int AdvanceBy,
       // do nothing (does not work on pre fermi)
     }
 
-  //cudaStreamSynchronize(fftstream0); // force sync now
+  cudaStreamSynchronize(fftstream0); // force sync now
   //CUDASYNC; // X
   return 0;
 }
@@ -792,8 +792,8 @@ int cudaAcc_fetchTripletAndPulseFlags(bool SkipTriplet, bool SkipPulse, int Puls
       if(Tflags->error) 
 	{
 	  fprintf(stderr,"Find triplets Cuda kernel encountered too many triplets, or bins above threshold, reprocessing this PoT on CPU...\n");
-	  cudaAcc_transposeGPU(dev_t_PowerSpectrum, dev_PowerSpectrum, FftLength, cudaAcc_NumDataPoints / FftLength);
-	  CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(tmp_PoT2, dev_t_PowerSpectrum, cudaAcc_NumDataPoints * sizeof(*dev_t_PowerSpectrum), cudaMemcpyDeviceToHost)),true);
+	  cudaAcc_transposeGPU(dev_t_PowerSpectrum, dev_PowerSpectrum, FftLength, cudaAcc_NumDataPoints / FftLength, fftstream0);
+	  CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(tmp_PoT2, dev_t_PowerSpectrum, cudaAcc_NumDataPoints * sizeof(*dev_t_PowerSpectrum), cudaMemcpyDeviceToHost, fftstream0)),true);
 	  // loop through frequencies
 	  for(int ThisPoT = 1; ThisPoT < FftLength; ThisPoT++) 
 	    {
@@ -804,7 +804,8 @@ int cudaAcc_fetchTripletAndPulseFlags(bool SkipTriplet, bool SkipPulse, int Puls
 	      bool TOffsetOK = true;
 	      if(ThisPoT == 1)
 		{ // dealyed
-		  CUDA_ACC_SAFE_CALL((CUDASYNC),true);
+		  //CUDA_ACC_SAFE_CALL((CUDASYNC),true);
+		  cudaStreamSynchronize(fftstream0);
 		}
 	      for(;TOffsetOK; PulsePoTNum++, TOffset += AdvanceBy) 
 		{
@@ -840,9 +841,9 @@ int cudaAcc_fetchTripletAndPulseFlags(bool SkipTriplet, bool SkipPulse, int Puls
 	    dim3 block(64,1,1);
 	    dim3 grid((FftLength + block.x - 1) / block.x, (PoTLen + AdvanceBy - 1) / AdvanceBy, 1);
 	    
-	    CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(TripletResults, dev_TripletResults, 2 * grid.x * block.x * grid.y * block.y * sizeof(*dev_TripletResults), cudaMemcpyDeviceToHost)),true);
-	    cudaAcc_transposeGPU(dev_t_PowerSpectrum, dev_PowerSpectrum, FftLength, cudaAcc_NumDataPoints / FftLength);
-	    CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(tmp_PoT2, dev_t_PowerSpectrum, cudaAcc_NumDataPoints * sizeof(*dev_t_PowerSpectrum), cudaMemcpyDeviceToHost)),true);		
+	    CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(TripletResults, dev_TripletResults, 2 * grid.x * block.x * grid.y * block.y * sizeof(*dev_TripletResults), cudaMemcpyDeviceToHost, fftstream0)),true);
+	    cudaAcc_transposeGPU(dev_t_PowerSpectrum, dev_PowerSpectrum, FftLength, cudaAcc_NumDataPoints / FftLength, fftstream0);
+	    CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(tmp_PoT2, dev_t_PowerSpectrum, cudaAcc_NumDataPoints * sizeof(*dev_t_PowerSpectrum), cudaMemcpyDeviceToHost, fftstream0)),true);		
 	    retval |= 1; // has triplets
 	  }
     }
@@ -851,7 +852,8 @@ int cudaAcc_fetchTripletAndPulseFlags(bool SkipTriplet, bool SkipPulse, int Puls
     {
       if(Pflags->has_best_pulse == -1)
 	{
-          CUDASYNC;
+          //CUDASYNC;
+	  cudaStreamSynchronize(fftstream1);
 	}
 
       if(Pflags->has_best_pulse > 0 || Pflags->has_report_pulse > 0) 
@@ -860,18 +862,18 @@ int cudaAcc_fetchTripletAndPulseFlags(bool SkipTriplet, bool SkipPulse, int Puls
 	  int PoTStride = (( (PulsePoTLen == PoTLen) ? 1: PoTLen/AdvanceBy) + 1) * AdvanceBy;
 	  int max_nb_of_elems = FftLength * PoTStride;
 	  
-	  CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(PulseResults, dev_PulseResults, 4 * (cudaAcc_NumDataPoints / AdvanceBy + 1) * sizeof(*dev_PulseResults), cudaMemcpyDeviceToHost)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(PulseResults, dev_PulseResults, 4 * (cudaAcc_NumDataPoints / AdvanceBy + 1) * sizeof(*dev_PulseResults), cudaMemcpyDeviceToHost, fftstream1)),true);
 	  
 	  if(Pflags->has_best_pulse > 0) 
 	    {
-	      cudaAcc_transposeGPU(dev_tmp_pot, dev_best_pot, FftLength, PoTStride);
-	      CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(best_PoT, dev_tmp_pot, max_nb_of_elems * sizeof(float), cudaMemcpyDeviceToHost)),true);
+	      cudaAcc_transposeGPU(dev_tmp_pot, dev_best_pot, FftLength, PoTStride, fftstream1);
+	      CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(best_PoT, dev_tmp_pot, max_nb_of_elems * sizeof(float), cudaMemcpyDeviceToHost, fftstream1)),true);
 	    }
 	  
 	  if(Pflags->has_report_pulse > 0) 
 	    {
-	      cudaAcc_transposeGPU(dev_tmp_pot2, dev_report_pot, FftLength, PoTStride);
-	      CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(tmp_PoT, dev_tmp_pot2, max_nb_of_elems * sizeof(float), cudaMemcpyDeviceToHost)),true);
+	      cudaAcc_transposeGPU(dev_tmp_pot2, dev_report_pot, FftLength, PoTStride, fftstream1);
+	      CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(tmp_PoT, dev_tmp_pot2, max_nb_of_elems * sizeof(float), cudaMemcpyDeviceToHost, fftstream1)),true);
 	    }
 	  
 	  retval |= 2; // has pulse(s)
@@ -1044,8 +1046,8 @@ int cudaAcc_processTripletResults(int PulsePoTLen, int AdvanceBy, int FftLength)
 		int index2 = ((PulsePoTNum * 2 + 1)* FftLength + ThisPoT);
                 if(ThisPoT == 1 && PulsePoTNum == 0)
 		  {
-		    CUDA_ACC_SAFE_CALL((CUDASYNC),true); // DELAYED
-		    //cudaStreamSynchronize(fftstream0);
+		    //CUDA_ACC_SAFE_CALL((CUDASYNC),true); // DELAYED
+		    cudaStreamSynchronize(fftstream0);
 		  }		
 		if(TripletResults[index].x > 0) 
 		  {
@@ -1793,84 +1795,84 @@ int cudaAcc_find_pulse_original(float best_pulse_score, int PulsePoTLen, int Adv
   switch(FftLength)
     {
       case 8:
-	find_pulse_kernel<false, 3, 8><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,  4, 8><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,  5, 8><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 8><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,  4, 8><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,  5, 8><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 16:
-	find_pulse_kernel<false, 3, 16><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,  4, 16><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,  5, 16><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 16><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,  4, 16><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,  5, 16><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 32: 
-	find_pulse_kernel<false, 3, 32><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,  4, 32><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,  5, 32><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 32><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,  4, 32><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,  5, 32><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 64:
-	find_pulse_kernel<false, 3, 64><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 64><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 5, 64><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 64><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 64><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 5, 64><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 128:
-	find_pulse_kernel<false, 3, 128><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 128><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 128><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 128><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 128><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 128><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 256:
-	find_pulse_kernel<false, 3, 256><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 256><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 256><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 256><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 256><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 256><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 512:
-	find_pulse_kernel<false, 3, 512><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 512><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 512><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 512><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 512><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 512><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 1024:
-	find_pulse_kernel<false, 3, 1024><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 1024><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 1024><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 1024><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 1024><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 1024><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 2048:
-	find_pulse_kernel<false, 3, 2048><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 2048><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 2048><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 2048><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 2048><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 2048><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 4096:
-	find_pulse_kernel<false, 3, 4096><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 4096><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 4096><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 4096><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 4096><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 4096><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 8192:
-	find_pulse_kernel<false, 3, 8192><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 8192><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 8192><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 8192><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 8192><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 8192><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 16384:
-	find_pulse_kernel<false, 3, 16384><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 16384><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 16384><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 16384><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 16384><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 16384><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 32768:
-	find_pulse_kernel<false, 3, 32768><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 32768><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 32768><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 32768><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 32768><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 32768><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 65536:
-	find_pulse_kernel<false, 3, 65536><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 65536><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 65536><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 65536><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 65536><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 65536><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 131072:
-	find_pulse_kernel<false, 3, 131072><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 131072><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 131072><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 131072><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 131072><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 131072><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
       case 262144:
-	find_pulse_kernel<false, 3, 262144><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true, 4, 262144><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
-	find_pulse_kernel<true,5, 262144><<<grid, block, 0 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<false, 3, 262144><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true, 4, 262144><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
+	find_pulse_kernel<true,5, 262144><<<grid, block, 0, fftstream1 >>>(best_pulse_score, PulsePoTLen, AdvanceBy, ndivs);	
 	break;
     }
   //CUDASYNC;  //cudaThreadSynchronize(); // XXXXX
@@ -2876,7 +2878,7 @@ int cudaAcc_find_pulse_original2m(float best_pulse_score, int PulsePoTLen, int A
       nRemaining = lastP - firstP; 
       itr_sent = MIN(nRemaining, num_iter);
       firstP = lastP - itr_sent;
-      CUDA_ACC_SAFE_LAUNCH( (find_pulse_kernel2m<fft_n, numthreads/fft_n, 3, false><<<grid, block>>>(best_pulse_score, PulsePoTLen, AdvanceBy, y_offset, numdivs, firstP, lastP)),true);
+      CUDA_ACC_SAFE_LAUNCH( (find_pulse_kernel2m<fft_n, numthreads/fft_n, 3, false><<<grid, block, 0, fftstream1>>>(best_pulse_score, PulsePoTLen, AdvanceBy, y_offset, numdivs, firstP, lastP)),true);
       //		CUDASYNC;
       lastP = firstP;
       nRemaining -= itr_sent;
@@ -2884,7 +2886,7 @@ int cudaAcc_find_pulse_original2m(float best_pulse_score, int PulsePoTLen, int A
         {
 	  itr_sent = MIN(nRemaining, num_iter);
 	  firstP = lastP - itr_sent;
-	  CUDA_ACC_SAFE_LAUNCH( (find_pulse_kernel2m<fft_n, numthreads/fft_n, 3, true><<<grid, block>>>(best_pulse_score, PulsePoTLen, AdvanceBy, y_offset, numdivs, firstP, lastP)),true);
+	  CUDA_ACC_SAFE_LAUNCH( (find_pulse_kernel2m<fft_n, numthreads/fft_n, 3, true><<<grid, block, 0, fftstream1>>>(best_pulse_score, PulsePoTLen, AdvanceBy, y_offset, numdivs, firstP, lastP)),true);
 	  //			CUDASYNC;
 	  lastP = firstP;
 	  nRemaining -= itr_sent;
@@ -2896,7 +2898,7 @@ int cudaAcc_find_pulse_original2m(float best_pulse_score, int PulsePoTLen, int A
         {
 	  itr_sent = MIN(nRemaining, num_iter);
 	  firstP = lastP - itr_sent;
-	  CUDA_ACC_SAFE_LAUNCH( (find_pulse_kernel2m<fft_n, numthreads/fft_n, 4, true><<<grid, block>>>(best_pulse_score, PulsePoTLen, AdvanceBy, y_offset, numdivs, firstP, lastP)),true);
+	  CUDA_ACC_SAFE_LAUNCH( (find_pulse_kernel2m<fft_n, numthreads/fft_n, 4, true><<<grid, block, 0, fftstream1>>>(best_pulse_score, PulsePoTLen, AdvanceBy, y_offset, numdivs, firstP, lastP)),true);
 	  //			CUDASYNC;
 	  lastP = firstP;
 	  nRemaining -= itr_sent;
@@ -2908,7 +2910,7 @@ int cudaAcc_find_pulse_original2m(float best_pulse_score, int PulsePoTLen, int A
         {
 	  itr_sent = MIN(nRemaining, num_iter);
 	  firstP = lastP - itr_sent;
-	  CUDA_ACC_SAFE_LAUNCH( (find_pulse_kernel2m<fft_n, numthreads/fft_n, 5, true><<<grid, block>>>(best_pulse_score, PulsePoTLen, AdvanceBy, y_offset, numdivs, firstP, lastP)),true);
+	  CUDA_ACC_SAFE_LAUNCH( (find_pulse_kernel2m<fft_n, numthreads/fft_n, 5, true><<<grid, block, 0, fftstream1>>>(best_pulse_score, PulsePoTLen, AdvanceBy, y_offset, numdivs, firstP, lastP)),true);
 	  //			CUDASYNC;
 	  lastP = firstP;
 	  nRemaining -= itr_sent;
@@ -3017,7 +3019,7 @@ void cudaAcc_choose_best_find_pulse(float best_pulse_score, int PulsePoTLen, int
 
 int cudaAcc_find_pulses(float best_pulse_score, int PulsePoTLen, int AdvanceBy, int FftLength) 
 {	
-  CUDA_ACC_SAFE_LAUNCH((cudaMemsetAsync(dev_find_pulse_flag, 0, sizeof(*dev_find_pulse_flag))),true);
+  CUDA_ACC_SAFE_LAUNCH((cudaMemsetAsync(dev_find_pulse_flag, 0, sizeof(*dev_find_pulse_flag), fftstream1)),true);
 
   cudaAcc_choose_best_find_pulse(best_pulse_score, PulsePoTLen, AdvanceBy, FftLength);
 
@@ -3025,7 +3027,7 @@ int cudaAcc_find_pulses(float best_pulse_score, int PulsePoTLen, int AdvanceBy, 
     cudaMallocHost(&Pflags, sizeof(result_find_pulse_flag));
 
   Pflags->has_best_pulse = -1;
-  CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(Pflags, dev_find_pulse_flag, sizeof(*dev_find_pulse_flag), cudaMemcpyDeviceToHost)),true);
+  CUDA_ACC_SAFE_LAUNCH((cudaMemcpyAsync(Pflags, dev_find_pulse_flag, sizeof(*dev_find_pulse_flag), cudaMemcpyDeviceToHost, fftstream1)),true);
   
   return 0;
 }
@@ -3036,7 +3038,8 @@ int cudaAcc_processPulseResults(int PulsePoTLen, int AdvanceBy, int FftLength)
   int PoTLen = cudaAcc_NumDataPoints / FftLength;
   int nb_of_results = 0;    
   int PoTStride = (( (PulsePoTLen == PoTLen) ? 1: PoTLen/AdvanceBy) + 1) * AdvanceBy;
-  
+
+  cudaStreamSynchronize(fftstream1);  
   // Iterating trough results
   for(int ThisPoT=1; ThisPoT < FftLength; ThisPoT++) 
     {
@@ -3049,11 +3052,6 @@ int cudaAcc_processPulseResults(int PulsePoTLen, int AdvanceBy, int FftLength)
 	      TOffset = PoTLen - PulsePoTLen;
 	    }
 	  
-	  /*	    if(FftLength == 8) 
-		    {
-		    TOffset2 += TOffset2 & 1; // Corresponding addresss as in cudaAcc_find_pulse_original2 kernel
-		    }
-	  */	    
 	  int index0 = ((PulsePoTNum * 4 + 0) * FftLength + ThisPoT);
 	  int index1 = ((PulsePoTNum * 4 + 1) * FftLength + ThisPoT);
 	  int index2 = ((PulsePoTNum * 4 + 2) * FftLength + ThisPoT);

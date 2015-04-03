@@ -265,7 +265,7 @@ int cudaAcc_FindAutoCorrelations(float *AutoCorrelation, int ac_fftlen)
       //Step 1: Preprocessing - repack relevant powerspectrum into a 4N array with 'real-even symmetry'
       //////!!!  CUDA_ACC_SAFE_LAUNCH( (ac_RepackInputKernelR<<<grid, block>>>( &dev_PowerSpectrum[ac_fftlen*fft_num], (float2 *)dev_AutoCorrInR )),true);
       //  CUDA_ACC_SAFE_LAUNCH( (ac_RepackInputKernel<<<grid, block>>>( &dev_PowerSpectrum[ac_fftlen*fft_num], dev_AutoCorrIn )),true);
-      CUDA_ACC_SAFE_LAUNCH( (ac_RepackInputKernelP<<<grid, block>>>( &dev_PowerSpectrum[ac_fftlen*fft_num], dev_AutoCorrIn[fft_num] )),true);
+      CUDA_ACC_SAFE_LAUNCH( (ac_RepackInputKernelP<<<grid, block, 0, fftstream0>>>( &dev_PowerSpectrum[ac_fftlen*fft_num], dev_AutoCorrIn[fft_num] )),true);
       
       //Step 2: Process the 4N-FFT (Complex to Complex, size is 4 * ac_fft_len)
       //////!!!  CUFFT_SAFE_CALL(cufftExecR2C(cudaAutoCorr_planR, (float*)dev_AutoCorrInR , dev_AutoCorrOutR)); //, CUFFT_FORWARD
@@ -276,11 +276,11 @@ int cudaAcc_FindAutoCorrelations(float *AutoCorrelation, int ac_fftlen)
       //  block.x = RPS;
       //  block.y = 1;
       //  dim3 grid2( ((ac_fftlen>>1)+block.x*B-1)/(block.x*B), 1, 1);
-      //  CUDA_ACC_SAFE_LAUNCH( (ac_RepackScaleKernel<<<grid2, block>>>( dev_AutoCorrOut, dev_AutoCorrIn )),true);
+      //  CUDA_ACC_SAFE_LAUNCH( (ac_RepackScaleKernel<<<grid2, block, 0, fftstream0>>>( dev_AutoCorrOut, dev_AutoCorrIn )),true);
       block.x = RPS;
       block.y = 1;
       dim3 grid2(B, ((ac_fftlen>>1)+block.x*B-1)/(block.x*B), 1);
-      CUDA_ACC_SAFE_LAUNCH( (ac_RepackScaleKernelP<<<grid2, block>>>( dev_AutoCorrOut[fft_num], dev_AutoCorrIn[fft_num])),true); //R first
+      CUDA_ACC_SAFE_LAUNCH( (ac_RepackScaleKernelP<<<grid2, block, 0, fftstream0>>>( dev_AutoCorrOut[fft_num], dev_AutoCorrIn[fft_num])),true); //R first
 
       int len = ac_fftlen/2;
       int blksize = RDP; 
@@ -288,9 +288,9 @@ int cudaAcc_FindAutoCorrelations(float *AutoCorrelation, int ac_fftlen)
       dim3 grid3(len/blksize,1,1);
 
       cudaFuncSetCacheConfig(ac_reducePartial, cudaFuncCachePreferShared);
-      CUDA_ACC_SAFE_LAUNCH( (ac_reducePartial<<<grid3, block3, blksize*sizeof(float3)>>>( (float *)dev_AutoCorrIn[fft_num], dev_ac_partials[fft_num] )),true);
+      CUDA_ACC_SAFE_LAUNCH( (ac_reducePartial<<<grid3, block3, blksize*sizeof(float3), fftstream0>>>( (float *)dev_AutoCorrIn[fft_num], dev_ac_partials[fft_num] )),true);
       blockSums[fft_num][0].x = -999;
-      cudaMemcpyAsync(&blockSums[fft_num][0], dev_ac_partials[fft_num], len/RDP*sizeof(float3), cudaMemcpyDeviceToHost);
+      cudaMemcpyAsync(&blockSums[fft_num][0], dev_ac_partials[fft_num], len/RDP*sizeof(float3), cudaMemcpyDeviceToHost, fftstream0);
 
     }
  return 0;
@@ -306,7 +306,11 @@ int cudaAcc_GetAutoCorrelation(float *AutoCorrelation, int ac_fftlen, int fft_nu
   float rac_TotalSum = 0, ac_Peak = 0;
   int ac_PeakBin = 0;
 
-  if(blockSums[fft_num][0].x == -999) { CUDASYNC; }
+  if(blockSums[fft_num][0].x == -999) 
+    { 
+      //CUDASYNC; 
+      cudaStreamSynchronize(fftstream0);
+    }
   for(int b = 0; b < len/blksize; b++)
     {
       rac_TotalSum += blockSums[fft_num][b].x;
