@@ -43,8 +43,21 @@
 extern double *angle_range;
 extern unsigned cmem_rtotal;
 
-extern cudaStream_t fftstream0; // fft, autocorr, triplet
-extern cudaStream_t fftstream1; // gauss
+extern cudaEvent_t fftDoneEvent;
+extern cudaEvent_t summaxDoneEvent;
+extern cudaEvent_t powerspectrumDoneEvent;
+
+extern cudaEvent_t autocorrelationDoneEvent[8];
+extern cudaEvent_t ac_reduce_partialEvent[8]; 
+
+extern cudaEvent_t meanDoneEvent;
+extern cudaEvent_t tripletsDoneEvent;
+extern cudaEvent_t pulseDoneEvent;
+extern cudaEvent_t gaussDoneEvent;
+
+extern cudaStream_t fftstream0; // fft, triplet
+extern cudaStream_t fftstream1; // pulse
+extern cudaStream_t cudaAutocorrStream[8]; // autocorr
 
 //Public function prototypes
 int  cudaAcc_initializeDevice(int devPref, int usePolling);
@@ -80,7 +93,7 @@ int cudaAcc_find_pulses(float best_pulse_score, int PulsePotLen, int AdvanceBy, 
 int cudaAcc_processPulseResults(int PulsePoTLen, int AdvanceBy, int FftLength);//int PulsePotLen, float triplet_thresh, int AdvanceBy, int ul_FftLength);
 
 //V7 Autocorrelation 
-int cudaAcc_FindAutoCorrelations(float *AutoCorrelation, int ac_fftlen);
+int cudaAcc_FindAutoCorrelations(int ac_fftlen);
 int cudaAcc_GetAutoCorrelation(float *AutoCorrelation, int ac_fftlen, int fft_num);
 
 //Referenced globals

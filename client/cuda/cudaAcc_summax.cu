@@ -259,29 +259,12 @@ __global__ void cudaAcc_SM( float* PowerSpectrum,float3* devPowerSpectrumSumMax)
 //							if (si.s.peak_power > (swi.analysis_cfg.spike_thresh))
 void cudaAcc_summax(int fftlen) 
 {
+  cudaStreamWaitEvent(fftstream1, powerspectrumDoneEvent, 0);
   //	int smemSize2 = fftlen*sizeof(float3);
   dim3 block2(fftlen, 1, 1);
   //dim3 grid2((cudaAcc_NumDataPoints + block2.x - 1) / block2.x, 1, 1);
   dim3 grid2 = grid2D((cudaAcc_NumDataPoints + block2.x - 1) / block2.x);
   
-  //  if ( fftlen == 64 || fftlen == 32)
-  //  {
-  //switch (fftlen) {
-  //case 64:
-  //	CUDA_ACC_SAFE_LAUNCH((cudaAcc_SM<64><<<grid2,block2,smemSize2,fftstream0>>>( dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
-  //	break;
-  //case 32:
-  //	CUDA_ACC_SAFE_LAUNCH((cudaAcc_SM<32><<<grid2,block2,smemSize2,fftstream0>>>( dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
-  //	break;
-  ////case 16:
-  ////	CUDA_ACC_SAFE_LAUNCH((cudaAcc_SM<16><<<grid2,block2,smemSize2,fftstream0>>>( dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
-  ////	break;
-  ////case 8:
-  ////	CUDA_ACC_SAFE_LAUNCH((cudaAcc_SM<8><<<grid2,block2,smemSize2,fftstream0>>>( dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
-  ////	break;
-  //}    
-  //  }
-  //  else
   if(fftlen >= 32 && cudaAcc_NumDataPoints/fftlen < 65536)
     {
       int optimal_block_x;
@@ -298,31 +281,31 @@ void cudaAcc_summax(int fftlen)
       switch(iterations)
       {
         case 1:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<1><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<1><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
         case 2:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<2><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<2><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
         case 4:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<4><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<4><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
         case 8:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<8><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<8><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
         case 16:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<16><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<16><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
         case 32:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<32><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<32><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
         case 64:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<64><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<64><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
         case 128:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<128><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<128><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
         case 256:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<256><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax32_kernel<256><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
 	default:
 	  fprintf(stderr, "cudaAcc_summax32_kernel template error\r\n");
@@ -345,25 +328,25 @@ void cudaAcc_summax(int fftlen)
       switch (fftlen) 
 	{
 	case 128:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<128><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<128><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
 	case 64:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<64><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<64><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
 	case 32:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<32><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<32><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
 	case 16:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<16><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<16><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
 	case 8:
-	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<8><<<grid, block, (block.x * sizeof(float3)),fftstream0>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
+	  CUDA_ACC_SAFE_LAUNCH((cudaAcc_summax_kernel<8><<<grid, block, (block.x * sizeof(float3)),fftstream1>>>(dev_PowerSpectrum, dev_PowerSpectrumSumMax)),true);
 	  break;
 	}
     }
   
   
-  cudaMemcpyAsync(PowerSpectrumSumMax, dev_PowerSpectrumSumMax, (cudaAcc_NumDataPoints / fftlen) * sizeof(*dev_PowerSpectrumSumMax), cudaMemcpyDeviceToHost, fftstream0);    
+  cudaMemcpyAsync(PowerSpectrumSumMax, dev_PowerSpectrumSumMax, (cudaAcc_NumDataPoints / fftlen) * sizeof(*dev_PowerSpectrumSumMax), cudaMemcpyDeviceToHost, fftstream1);    
 }
 
 

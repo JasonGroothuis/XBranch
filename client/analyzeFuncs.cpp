@@ -386,7 +386,11 @@ int seti_analyze (ANALYSIS_STATE& state)
   sah_complex* WorkData = NULL;
   float* PowerSpectrum = NULL;
   float* tPowerSpectrum; // Transposed power spectra if used.
-  float* AutoCorrelation = NULL;
+#ifdef USE_CUDA
+  float* autoCorrelation[8];
+#else
+  float* AutoCorrelation;
+#endif
   
   SAFE_EXIT_CHECK;
 #ifdef USE_CUDA
@@ -548,6 +552,7 @@ int seti_analyze (ANALYSIS_STATE& state)
   ChirpedData = state.data;
   PowerSpectrum = (float*) calloc_a(NumDataPoints, sizeof(float), MEM_ALIGN);
   if (PowerSpectrum == NULL) SETIERROR(MALLOC_FAILED, "PowerSpectrum == NULL");
+
   if (use_transposed_pot) 
     {
       tPowerSpectrum = (float*) calloc_a(NumDataPoints, sizeof(float), MEM_ALIGN);
@@ -557,8 +562,17 @@ int seti_analyze (ANALYSIS_STATE& state)
     {
       tPowerSpectrum=PowerSpectrum;
     }
+
+#ifdef USE_CUDA
+  for(int i = 0; i < 8; i++)
+    {
+      autoCorrelation[i] = (float*)calloc_a(ac_fft_len, sizeof(float), MEM_ALIGN);
+      if (autoCorrelation[i] == NULL) SETIERROR(MALLOC_FAILED, "AutoCorrelation == NULL");
+    }
+#else
   AutoCorrelation = (float*)calloc_a(ac_fft_len, sizeof(float), MEM_ALIGN);
   if (AutoCorrelation == NULL) SETIERROR(MALLOC_FAILED, "AutoCorrelation == NULL");
+#endif
   
   // boinc_worker_timer();
   FftNum=0;
@@ -1026,7 +1040,7 @@ int seti_analyze (ANALYSIS_STATE& state)
 		      bitfield >>= 1;
 		    }
 		  cufftplans_done++;
-		  CUDA_ACC_SAFE_CALL((CUDASYNC), true); // Wait for first chirp to finish now that cufft plans are done
+		  //CUDA_ACC_SAFE_CALL((CUDASYNC), true); // Wait for first chirp to finish now that cufft plans are done
 		  analysis_state.FLOP_counter+=12.0*NumDataPoints;
 		  cudaStreamDestroy(chirpstream); //finished with the async chirp
 		  //fprintf(stderr,"after async chirp\n");
@@ -1130,42 +1144,89 @@ int seti_analyze (ANALYSIS_STATE& state)
 #ifdef USE_CUDA
       if(gSetiUseCudaDevice)
 	{
+	  bool noscore = false;
+	  int PulsePoTLen = 0, Overlap = 0, PoTLen;
+	  PoTLen = NumDataPoints / fftlen;
+	  GetPulsePoTLen(PoTLen, &PulsePoTLen, &Overlap);  
+
+	  bool SkipTriplet = false, SkipPulse = false;
+	  bool SkipGauss = !(ChirpFftPairs[icfft].GaussFit);
+	  if(PulsePoTLen > PoTInfo.TripletMax || PulsePoTLen < PoTInfo.TripletMin)
+	    SkipTriplet = true;
+	  SkipPulse = !(ChirpFftPairs[icfft].PulseFind);
+
+	  //printf("Calling dfts\r\n");
 	  cudaAcc_execute_dfts(FftNum, chirpoffset);
 	  state.FLOP_counter+=5*(double)fftlen*log((double)fftlen)/log(2.0) * NumFfts;           
 	  
-	  cudaAcc_GetPowerSpectrum(NumDataPoints,0,fftstream0);
+	  //printf("Calling getPowerSpectrum\r\n");
+	  cudaAcc_GetPowerSpectrum(NumDataPoints, 0, fftstream0);
 	  
 	  state.FLOP_counter+=3.0*NumDataPoints;
 	  
-	  if (state.PoT_freq_bin == -1) 
-	    { 
-	      PowerSpectrumSumMax[0].z = -999;
+	  if(state.PoT_freq_bin == -1) 
+	    {
+	      //printf("Calling summax\r\n");
 	      cudaAcc_summax(fftlen);
+	      cudaEventRecord(summaxDoneEvent, fftstream1);
 	      state.FLOP_counter+=NumDataPoints;
 	      if(swi.analysis_cfg.spikes_per_spectrum > 1) 
 		{
 		  SETIERROR(retval,"from FindSpikes cudaAcc_summax doesn't support (swi.analysis_cfg.spikes_per_spectrum > 1");
 		}
 	    }
-	
-	  for(ifft = 0; ifft < NumFfts; ifft++) 
+
+	  // XXXXXXXXXXXXX
+	  int AdvanceBy  = PulsePoTLen - Overlap;     // in bins		   
+
+	  if(!SkipTriplet || !SkipPulse) // do beforehand on fftstreamX
 	    {
-	      CurrentSub = fftlen * ifft;           
-	      
-	      if(state.PoT_freq_bin == -1) 
+	      //	    CUDASYNC;
+	      //printf("CalculateMean\r\n");
+	      cudaAcc_calculate_mean(PulsePoTLen, 0, AdvanceBy, fftlen);
+	    }
+	  
+	  if(!SkipPulse) 
+	    {
+	      //printf("FindPulses\r\n");
+	      cudaAcc_find_pulses((float) best_pulse->score, PulsePoTLen, AdvanceBy, fftlen);
+	    }
+
+	  if(!SkipTriplet) 
+	    {
+	      //printf("FindTriplets\r\n");
+	      cudaAcc_find_triplets(PulsePoTLen, (float)PoTInfo.TripletThresh, AdvanceBy, fftlen);
+	    }
+
+	  if(state.PoT_freq_bin == -1) 
+	    {
+	      if(gCudaAutocorrelation && (fftlen == ac_fft_len))
 		{
-		  if(fftlen == ac_fft_len) 
-		    {
-		      state.FLOP_counter+=((double)fftlen)*5*log((double)fftlen)/log(2.0)+2*fftlen;
-		      if(gCudaAutocorrelation)
-			{
-			  if(ifft == 0)
-			    cudaAcc_FindAutoCorrelations(AutoCorrelation, ac_fft_len);
-			}
-		    }
+		  state.FLOP_counter += (((double)fftlen)*5*log((double)fftlen)/log(2.0)+2*fftlen) * NumFfts; 
+
+		  cudaAcc_FindAutoCorrelations(ac_fft_len);
+		}
+	    }
+	  
+  	  if(!SkipGauss) 
+	    {
+	      //printf("FindGauss\r\n");
+	      cudaAcc_GaussfitStart(fftlen, best_gauss->score, noscore);
+	    } 
+
+	  if(state.PoT_freq_bin == -1) 
+	    {
+	      cudaEventSynchronize(summaxDoneEvent);
+	      //	  if(cudaStreamQuery(fftstream1) != cudaSuccess)
+	      //	    cudaStreamSynchronize(fftstream1); // wait for summax on stream1     
+
+	      for(ifft = 0; ifft < NumFfts; ifft++) 
+		{
+		  CurrentSub = fftlen * ifft;           
+		 
 		  state.FLOP_counter+=(double)fftlen;
-                  if(PowerSpectrumSumMax[0].z == -999)
-		    cudaStreamSynchronize(fftstream0);               
+		  
+		  //printf("Calling findSpikes2\r\n");
 		  retval = FindSpikes2(                       
 				       fftlen,
 				       ifft,
@@ -1176,25 +1237,21 @@ int seti_analyze (ANALYSIS_STATE& state)
 							      );
 		  progress += SpikeProgressUnits(fftlen)*ProgressUnitSize/NumFfts;
 		  if (retval) SETIERROR(retval,"from FindSpikes");
-		  
-		  if(fftlen == ac_fft_len) 
-		    {
-		      state.FLOP_counter+=((double)fftlen)*5*log((double)fftlen)/log(2.0)+2*fftlen;
-		      if(gCudaAutocorrelation)
-			{
-			  // these 2 moved to an earlier point
-			  //			  if(ifft == 0)
-			  //  cudaAcc_FindAutoCorrelations(AutoCorrelation, ac_fft_len);
-
-			  //cudaMemcpy(AutoCorrelation,dev_AutoCorrIn,(ac_fft_len>>1)*sizeof(float),cudaMemcpyDeviceToHost);
-			  //Jason: postprocessing result reduction mostly moved to GPU, no large Device->Host Memcopy needed.
-			  //Just enough info for updating best & reporting signals.
-			  cudaAcc_GetAutoCorrelation(AutoCorrelation, ac_fft_len, ifft);
-			  retval = FindAutoCorrelation_c( AutoCorrelation, fftlen, ifft, swi  );
-			  if (retval) SETIERROR(retval,"from FindAutoCorrelation_c() - after Cuda");
-			} 
-		    }
 		}
+
+	      if((fftlen == ac_fft_len) && gCudaAutocorrelation)
+		{
+		  //Jason: postprocessing result reduction mostly moved to GPU, no large Device->Host Memcopy needed.
+		  //Just enough info for updating best & reporting signals.
+		  for(ifft = 0; ifft < NumFfts; ifft++)
+		    cudaAcc_GetAutoCorrelation(autoCorrelation[ifft], ac_fft_len, ifft); 
+
+		  for(ifft = 0; ifft < NumFfts; ifft++)
+		    {
+		      retval = FindAutoCorrelation_c(autoCorrelation[ifft], fftlen, ifft, swi);
+		      if (retval) SETIERROR(retval,"from FindAutoCorrelation_c() - after Cuda");
+		    }
+		} 
 	    }
 	}
       else
@@ -1260,8 +1317,10 @@ int seti_analyze (ANALYSIS_STATE& state)
 		      fprintf(stderr,"fftw is disabled, reached a problem in CPU fallback, exiting with an error\n");
 		      SETIERROR(-1,"from Autocorrelation, lacks CPU Fallback FFT (no fftw)");
 #endif
+#ifndef USE_CUDA
 		      retval = FindAutoCorrelation( AutoCorrelation, fftlen, ifft, swi  );
 		      if (retval) SETIERROR(retval,"from FindAutoCorrelation");
+#endif
 		    }
 		  
 		}
@@ -1325,6 +1384,8 @@ int seti_analyze (ANALYSIS_STATE& state)
       // length and/or this WUs slew rate places the data block
       // outside PoT analysis limits.
       // Counting flops is done inside analyze_pot
+
+      //printf("Calling analyze_pot\r\n");
       retval = analyze_pot(tPowerSpectrum, NumDataPoints, ChirpFftPairs[icfft]);
       if (retval) SETIERROR(retval,"from analyze_pot");
       
@@ -1407,7 +1468,13 @@ int seti_analyze (ANALYSIS_STATE& state)
   
   if (PowerSpectrum) free_a(PowerSpectrum);
   if (use_transposed_pot) free_a(tPowerSpectrum);
+#ifdef USE_CUDA
+  for(int i = 0; i < 8; i++)
+    if (autoCorrelation[i]) free_a(autoCorrelation[i]);
+#else
   if (AutoCorrelation) free_a(AutoCorrelation);
+#endif
+
   
 #ifdef USE_IPP
   for (FftNum = 0; FftNum < swi.num_fft_lengths; FftNum++) 

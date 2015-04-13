@@ -82,13 +82,15 @@ __global__ void cudaAcc_GPS_kernel_mod3( int NumDataPoints, float2* FreqData, fl
 }
 #endif
 
-void cudaAcc_GetPowerSpectrum(int numpoints, int offset, cudaStream_t str) 
+void cudaAcc_GetPowerSpectrum(int numpoints, int offset, cudaStream_t stream) 
 {
   dim3 block(blockDim_x, 1, 1);
   //	dim3 grid((numpoints + (block.x*B) - 1) / (block.x*B), 1, 1);
   dim3 grid = grid2D((numpoints + (block.x*B*D) - 1) / (block.x*B*D));
-  
-  CUDA_ACC_SAFE_LAUNCH( (cudaAcc_GPS_kernel_mod3SM<<<grid, block, 0, str>>>(dev_WorkData+offset, dev_PowerSpectrum+offset)),true);
+
+  cudaStreamWaitEvent(stream, fftDoneEvent, 0);
+  CUDA_ACC_SAFE_LAUNCH( (cudaAcc_GPS_kernel_mod3SM<<<grid, block, 0, stream>>>(dev_WorkData+offset, dev_PowerSpectrum+offset)),true);
+  cudaEventRecord(powerspectrumDoneEvent, stream);
 }
 
 #endif //USE_CUDA

@@ -198,7 +198,7 @@ void cudaAcc_CalcChirpData_sm13(double chirp_rate, double recip_sample_rate, sah
 	dim3 grid = grid2D((cudaAcc_NumDataPoints + (block.x*B - 1)) / (block.x*B));
 
         double ccr = 0.5*chirp_rate*recip_sample_rate*recip_sample_rate;
-	CUDA_ACC_SAFE_LAUNCH( (cudaAcc_CalcChirpData_kernel_sm13<<<grid, block>>>(cudaAcc_NumDataPoints, ccr, dev_cx_DataArray, dev_cx_ChirpDataArray)),true);
+	CUDA_ACC_SAFE_LAUNCH( (cudaAcc_CalcChirpData_kernel_sm13<<<grid, block, 0, fftstream0>>>(cudaAcc_NumDataPoints, ccr, dev_cx_DataArray, dev_cx_ChirpDataArray)),true);
 }
 
 void cudaAcc_CalcChirpData_sm13_async(double chirp_rate, double recip_sample_rate, sah_complex* cx_ChirpDataArray, cudaStream_t chirpstream) {
@@ -215,7 +215,7 @@ void cudaAcc_CalcChirpData_sm13_async(double chirp_rate, double recip_sample_rat
 	dim3 grid = grid2D( (cudaAcc_NumDataPoints + (block.x*B - 1)) / (block.x*B));
         double ccr = 0.5*chirp_rate*recip_sample_rate*recip_sample_rate;
 
-	CUDA_ACC_SAFE_LAUNCH( (cudaAcc_CalcChirpData_kernel_sm13<<<grid, block,0,chirpstream>>>(cudaAcc_NumDataPoints, ccr, dev_cx_DataArray, dev_cx_ChirpDataArray)),true);
+	CUDA_ACC_SAFE_LAUNCH( (cudaAcc_CalcChirpData_kernel_sm13<<<grid, block,0,fftstream0>>>(cudaAcc_NumDataPoints, ccr, dev_cx_DataArray, dev_cx_ChirpDataArray)),true);
 }
 
 #endif //USE_CUDA
