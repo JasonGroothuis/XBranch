@@ -83,7 +83,7 @@ int analyze_pot(float *PowerSpectrum, int NumDataPoints, ChirpFftPair_t &cfft)
     i,
     FftLength=cfft.FftLen,  // Current FFT length
     ThisPoT,          // index of current PoT along the freq axis
-    PoTLen,           // complement of FFT length - determines time res
+    PoTLen,           // compliment of FFT length - determines time res
     PulsePoTLen,      // length of PoT segment passed to pulse finders
     Overlap,          // PoT segment overlap in bins
     TOffset,          // index into ThisPoT of current pulse segment
@@ -236,10 +236,8 @@ int analyze_pot(float *PowerSpectrum, int NumDataPoints, ChirpFftPair_t &cfft)
 	  bool noscore = false; //swi.analysis_cfg.autocorr_fftlen!=0 && gaussian_count!=0;
 
 	  //cudaAcc_Gaussfit(FftLength, best_gauss->score, noscore);
-	  //printf("GaussFitStart\r\n");
-	  b_gaussStarted = true; // started earlier
-	  //cudaAcc_GaussfitStart(FftLength, best_gauss->score, noscore);
-
+	  b_gaussStarted = true;
+	  cudaAcc_GaussfitStart(FftLength, best_gauss->score, noscore);
 	  if(PoTLen > swi.analysis_cfg.gauss_pot_length)
 	    analysis_state.FLOP_counter+=((double)NumDataPoints+swi.analysis_cfg.gauss_pot_length * (FftLength-1)); // GetFixedPoT
 	  // There are FftLength - 1 fixed PoTs for a chirp/fft pair, and for each fixed PoT full analysis would do
@@ -351,36 +349,26 @@ int analyze_pot(float *PowerSpectrum, int NumDataPoints, ChirpFftPair_t &cfft)
 #ifdef USE_CUDA
     if(gSetiUseCudaDevice)
       {	
-	/*
-	if(!SkipTriplet || !SkipPulse) // do beforehand on fftstreamX
+	if(!SkipTriplet || !SkipPulse) // do beforehand on fftstream0
 	  {
-	    //	    CUDASYNC;
-	    //printf("CalculateMean\r\n");
 	    cudaAcc_calculate_mean(PulsePoTLen, 0, AdvanceBy, FftLength);
 	  }
 
 	if(!SkipPulse) 
 	  {
-	    //printf("FindPulses\r\n");
 	    cudaAcc_find_pulses((float) best_pulse->score, PulsePoTLen, AdvanceBy, FftLength);
 	  }
 
 	if(!SkipTriplet) 
 	  {
-	    //printf("FindTriplets\r\n");
 	    cudaAcc_find_triplets(PulsePoTLen, (float)PoTInfo.TripletThresh, AdvanceBy, FftLength);
 	  }
-*/
 
-	//printf("fetchTripletAndPulseFlags\r\n");
-	int has_data = 0;
-	if(!SkipTriplet || !SkipPulse)
-          has_data = cudaAcc_fetchTripletAndPulseFlags(SkipTriplet, SkipPulse, PulsePoTLen, AdvanceBy, FftLength);
+        int has_data = cudaAcc_fetchTripletAndPulseFlags(SkipTriplet, SkipPulse, PulsePoTLen, AdvanceBy, FftLength);
 
         int gflags = 0;
 	if(b_gaussStarted)
 	  {
-	    //printf("fetchGaussFitFlags\r\n");
 	    b_gaussStarted = false;
 	    gflags = cudaAcc_fetchGaussfitFlags(FftLength, best_gauss->score);
 	  }
@@ -388,10 +376,7 @@ int analyze_pot(float *PowerSpectrum, int NumDataPoints, ChirpFftPair_t &cfft)
 	if(!SkipTriplet)
 	  {
 	    if((has_data & 1) && !(has_data & 4)) // has triplet data and no error in triplet
-	      {
-		//printf("processTripletResults\r\n");
-		cudaAcc_processTripletResults(PulsePoTLen, AdvanceBy, FftLength);
-	      }
+	      cudaAcc_processTripletResults(PulsePoTLen, AdvanceBy, FftLength);
 
 	    analysis_state.FLOP_counter+=(10.0 + PulsePoTLen) * NumPulsePoTs * (FftLength - 1);
 	    //  ! hard to estimate, so be generous and use 9
@@ -402,19 +387,13 @@ int analyze_pot(float *PowerSpectrum, int NumDataPoints, ChirpFftPair_t &cfft)
 	if(!SkipPulse) 
 	  {
 	    if((has_data & 2) && !(has_data & 8)) // has pulse data and no error in pulse
-	      {
-		//printf("processPulseResults\r\n");
-		cudaAcc_processPulseResults(PulsePoTLen, AdvanceBy, FftLength);
-	      }
+	      cudaAcc_processPulseResults(PulsePoTLen, AdvanceBy, FftLength);
 	    analysis_state.FLOP_counter+=(PulsePoTLen*0.1818181818182+400.0)*PulsePoTLen * NumPulsePoTs * (FftLength - 1);
 	    progress += ProgressUnitSize * PulseProgressUnits(PulsePoTLen, FftLength - 1);
 	  }
 
-	if(gflags > 0)
-	  {
-	    //printf("ProcessGaussFit\r\n");
-	    cudaAcc_processGaussFit(FftLength, best_gauss->score);
-	  }
+	if(b_gaussStarted && gflags > 0)
+	  cudaAcc_processGaussFit(FftLength, best_gauss->score);
 
 	//#ifndef CUDAACC_EMULATION
 	//if(!SkipTriplet)
@@ -526,8 +505,6 @@ int analyze_pot(float *PowerSpectrum, int NumDataPoints, ChirpFftPair_t &cfft)
 
   if(b_gaussStarted) // process results late
     {
-      //printf("late GaussBlock\r\n");
-
       int flags = cudaAcc_fetchGaussfitFlags(FftLength, best_gauss->score);
 
       if(flags>0)
