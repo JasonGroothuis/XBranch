@@ -55,15 +55,15 @@ typedef struct {
     float GaussChiSqThresh;
     float gauss_null_chi_sq_thresh;
     float gauss_chi_sq_thresh;
-    float* dev_PoTG;
-    float* dev_PoTPrefixSumG;
+    float* dev_PoT;
+    float* dev_PoTPrefixSum;
     float* dev_PowerSpectrum;
     float4* dev_GaussFitResults;
     float4* dev_GaussFitResultsReordered;
     float4* dev_GaussFitResultsReordered2;
     float* dev_NormMaxPower;    
     float* dev_outputposition;
-    float *dev_tmp_potG; //2xxxx
+    float *dev_tmp_pot2; //2xxxx
     float score_offset;
     int NumDataPoints;
     float f_weight[CUDA_ACC_MAX_GaussTOffsetStop]; // cached  static_cast<float>(EXP(i, 0, PoTInfo.GaussSigmaSq));
@@ -87,13 +87,9 @@ extern double2* dev_CurrentTrig;
 extern float2* dev_WorkData;
 
 extern float* dev_PowerSpectrum;
-extern float* dev_t_PowerSpectrumP; // pulse
-extern float* dev_t_PowerSpectrumT; // triplets
-extern float* dev_t_PowerSpectrumG; // gauss
-extern float* dev_PoTP;
-extern float* dev_PoTG;
-extern float* dev_PoTPrefixSumG;
-extern float* dev_PoTPrefixSumP;
+extern float* dev_t_PowerSpectrum;
+extern float* dev_PoT;
+extern float* dev_PoTPrefixSum;
 extern float4* dev_GaussFitResults;
 extern float4* dev_GaussFitResultsReordered;
 extern float4* dev_GaussFitResultsReordered2;
@@ -101,11 +97,10 @@ extern float4* dev_TripletResults; // In the same place as dev_GaussFitResults
 extern float4* dev_PulseResults; // In the same place as dev_GaussFitResults
 extern float4* TripletResults; // In the same place as PulseResults
 extern float4* PulseResults; // In the same place as PulseResults
-
-extern float* dev_tmp_potP; // pulse
-extern float* dev_tmp_potT; // triplet
-extern float* dev_best_potP;
-extern float* dev_report_potP;
+extern float* dev_tmp_pot;
+extern float* dev_tmp_pot2; // 2xxx
+extern float* dev_best_pot;
+extern float* dev_report_pot;
 //extern float2* dev_sample_rate;
 
 extern float* dev_NormMaxPower;
@@ -114,20 +109,18 @@ extern float3* dev_PowerSpectrumSumMax;
 extern bool gCudaAutocorrelation;
 extern float2* dev_AutoCorrIn[8];
 extern float2* dev_AutoCorrOut[8];
-extern cufftHandle cudaAutoCorr_plan[8];
-//extern cufftHandle cudaAutoCorr_plan;
+//extern cufftHandle cudaAutoCorr_plan[8];
+extern cufftHandle cudaAutoCorr_plan;
 //extern cudaStream_t cudaAutocorrStream[8];
 
 extern float* dev_flagged;
 extern float* dev_outputposition;
-extern result_flag* dev_flagT;
-extern result_flag* dev_flagG;
+extern result_flag* dev_flag;
 extern float* tmp_small_PoT;
-extern float* tmp_PoTP; // pulse
-extern float* tmp_PoTT; // triplet
-extern float* tmp_PoTG; // gauss
-extern float* best_PoTP;
-extern float* best_PoTG;
+extern float* tmp_PoT;
+extern float* best_PoT;
+extern float* tmp_PoT2; // triplets
+extern float* best_PoT2; // triplets
 
 extern float4* GaussFitResults;
 
