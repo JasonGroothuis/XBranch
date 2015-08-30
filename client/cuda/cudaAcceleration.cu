@@ -523,7 +523,6 @@ int cudaAcc_initialize(sah_complex* cx_DataArray, int NumDataPoints, int gauss_p
     {fprintf(stderr, "Autocorr stream create 7 failed\r\n"); return 1;}
 */
   
-  cudaStreamCreate(&fftstream0);
   cudaStreamCreate(&fftstream1);
 
   if(cudaAcc_initializeGaussfit(PoTInfo, gauss_pot_length, nsamples, gauss_null_chi_sq_thresh, gauss_chi_sq_thresh))
@@ -638,10 +637,6 @@ int cudaAcc_InitializeAutocorrelation(int ac_fftlen)
       cu_errf = cufftPlan1d(&cudaAutoCorr_plan, ac_fftlen*4, CUFFT_C2C, 1); //4N FFT method
       if(CUFFT_SUCCESS != cu_errf) 
         fprintf(stderr,"Not enough room for autocorrelation CuFFT plan 0(4NFFT method)\n");
-      cu_errf = cufftSetStream(cudaAutoCorr_plan, fftstream0);
-      if(CUFFT_SUCCESS != cu_errf) 
-        fprintf(stderr, "cufftSetStream autocorr fftstream0 failed");
-	
 /*      cu_errf = cufftPlan1d(&cudaAutoCorr_plan[1], ac_fftlen*4, CUFFT_C2C, 1); //4N FFT method
       if(CUFFT_SUCCESS != cu_errf) 
         fprintf(stderr,"Not enough room for autocorrelation CuFFT plan 1(4NFFT method)\n");
