@@ -11,8 +11,4 @@
 
 rootProject.name = 'XBranch'
 
-/*
-// example sub project includes
-include 'CfgFile'
-include 'CfgFileTest'
-*/
+include 'xRefinery'

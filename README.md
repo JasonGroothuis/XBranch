@@ -1,6 +1,12 @@
 # XBranch
 'x42' development commences 23rd July 2016
 
+current stage (24th July 2016) of components:
+xRefinery - (Initial) Lab and proving ground (buildsystem setup, for ongoing refinment)
+xBoincApi - (Preparing) Adapted/simplified boincapi wrapper/mods, with threadsafety and other robustness enhancements
+client    - (Preparing)
+taskInspector - (Preparing)
+
 <h1>Seti@home application and tools</h1>
 Based on everything learned from development with seti@home (since ~2007):
 - modernised cross platform development (Gradle buildsystem)

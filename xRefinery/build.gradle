@@ -1,0 +1,107 @@
+apply plugin: "cpp"
+
+def opencl_home = System.getenv('CUDA_PATH_V6_5')
+def cuda_home = System.getenv('CUDA_PATH_V6_5')
+def cuda_files = '.\\src\\main\\cuda\\'
+def cuda_includes = ''
+
+model {
+    buildTypes {
+        debug
+        release
+    }
+
+    platforms {
+        x86 {
+            architecture "x86"
+        }
+        x64 {
+            architecture "x86_64"
+        }
+    }   
+    
+    toolChains {
+        visualCpp(VisualCpp) {
+            // Specify the installDir if Visual Studio cannot be located
+            // installDir "C:/Apps/Microsoft Visual Studio 10.0"
+        }
+    }
+    
+    components {
+        main(NativeExecutableSpec) {
+			targetPlatform "x86"
+			targetPlatform "x64"
+            binaries.all {
+                if (toolChain in Gcc) {
+                    cppCompiler.args "-fno-access-control", "-fconserve-space"
+					if (buildType == buildTypes.debug) {
+						cppCompiler.args "-g"
+					}
+				}
+                if (toolChain in VisualCpp) {
+                    cppCompiler.args "-I"+opencl_home+"/include"
+                    cppCompiler.args "/EHsc"
+					linker.args "OpenCL.lib"
+					linker.args "delayimp.lib","/DELAYLOAD:OpenCL.dll","/DELAY:UNLOAD"
+					
+					println "===> " + targetPlatform.name + "  " + buildType.name + " <==="
+					if ( targetPlatform.name == 'x86' ) {
+						linker.args "/LIBPATH:" + opencl_home + "/lib/Win32"
+					}
+					if ( targetPlatform.name == 'x64' ) {
+						linker.args "/LIBPATH:" + opencl_home + "/lib/x64"
+					}
+					if (buildType == buildTypes.release) {
+						cppCompiler.args "/O2","/MT"                    
+						cppCompiler.define 'NDEBUG'
+					}
+					if (buildType == buildTypes.debug) {
+						cppCompiler.args "/MTd"                    
+						cppCompiler.args '/Zi'
+						cppCompiler.define 'DEBUG'
+						linker.args '/DEBUG'
+					}								
+                }												             
+            }
+        }
+    }
+	tasks { t ->
+		$.components.main.binaries.each { binary ->
+			def stripTask = binary.tasks.taskName("strip")
+			t.create(stripTask) {
+				dependsOn binary.tasks.link
+				doFirst {
+					if (binary.toolChain in Gcc) {
+						["strip", binary.tasks.link.outputFile].execute()
+					}
+				}
+			}
+			binary.tasks.build.dependsOn stripTask
+		}
+	}		
+}
+
+task nvccVersion(type:Exec) {
+//	workingDir '.'
+	def nvcmdline = cuda_home+'\\bin\\nvcc'
+	doFirst{
+		println 'Cuda path is ' + cuda_home
+		println 'working directory is ' + workingDir		
+	}
+	commandLine nvcmdline, '--version'	
+}
+
+task nvccCompile(type:Exec) {
+//	workingDir '.'
+	def nvcmdline = cuda_home+'bin\\nvcc'
+//	if ( targetPlatform.name == 'x86' ) 
+//	{
+		commandLine nvcmdline, '--compile --machine 32', cuda_files+'test.cu'
+//	}
+//	if ( targetPlatform.name == 'x64' ) 
+//	{
+//		commandLine nvcmdline, '--compile --machine 64', cuda_files+'test.cu'
+//	}
+//	commandLine nvcmdline, '--compile', cuda_files+'test.cu'
+}
+
