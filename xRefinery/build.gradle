@@ -1,6 +1,6 @@
 apply plugin: "cpp"
 
-def opencl_home = System.getenv('CUDA_PATH_V6_5')
+//def opencl_home = System.getenv('CUDA_PATH_V6_5')
 def cuda_home = System.getenv('CUDA_PATH_V6_5')
 def cuda_files = '.\\src\\main\\cuda\\'
 def cuda_includes = ''
@@ -23,7 +23,8 @@ model {
     toolChains {
         visualCpp(VisualCpp) {
             // Specify the installDir if Visual Studio cannot be located
-            // installDir "C:/Apps/Microsoft Visual Studio 10.0"
+            installDir "C:/Program Files (x86)/Microsoft Visual Studio 10.0"
+			windowsSdkDir "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1A"
         }
     }
     
@@ -39,17 +40,17 @@ model {
 					}
 				}
                 if (toolChain in VisualCpp) {
-                    cppCompiler.args "-I"+opencl_home+"/include"
+//                    cppCompiler.args "-I"+opencl_home+"/include"
                     cppCompiler.args "/EHsc"
-					linker.args "OpenCL.lib"
-					linker.args "delayimp.lib","/DELAYLOAD:OpenCL.dll","/DELAY:UNLOAD"
+//					linker.args "OpenCL.lib"
+//					linker.args "delayimp.lib","/DELAYLOAD:OpenCL.dll","/DELAY:UNLOAD"
 					
 					println "===> " + targetPlatform.name + "  " + buildType.name + " <==="
 					if ( targetPlatform.name == 'x86' ) {
-						linker.args "/LIBPATH:" + opencl_home + "/lib/Win32"
+//						linker.args "/LIBPATH:" + opencl_home + "/lib/Win32"
 					}
 					if ( targetPlatform.name == 'x64' ) {
-						linker.args "/LIBPATH:" + opencl_home + "/lib/x64"
+//						linker.args "/LIBPATH:" + opencl_home + "/lib/x64"
 					}
 					if (buildType == buildTypes.release) {
 						cppCompiler.args "/O2","/MT"                    
@@ -91,17 +92,85 @@ task nvccVersion(type:Exec) {
 	commandLine nvcmdline, '--version'	
 }
 
-task nvccCompile(type:Exec) {
-//	workingDir '.'
-	def nvcmdline = cuda_home+'bin\\nvcc'
-//	if ( targetPlatform.name == 'x86' ) 
-//	{
-		commandLine nvcmdline, '--compile --machine 32', cuda_files+'test.cu'
-//	}
-//	if ( targetPlatform.name == 'x64' ) 
-//	{
-//		commandLine nvcmdline, '--compile --machine 64', cuda_files+'test.cu'
-//	}
-//	commandLine nvcmdline, '--compile', cuda_files+'test.cu'
+task compileCuda(type:nvccCompile) {
+    inputDir = file(cuda_files)
+    outputDir = file("$buildDir/cuobjs")
+    inputProperty = project.properties['taskInputProperty'] ?: "original"	
+	cuSrcDir = file('src/main/cuda')
+	cucollection = files { cuSrcDir.listFiles() }
+	nvcmdline = cuda_home+'\\bin\\nvcc'		
 }
 
+class nvccCompile extends DefaultTask {
+    @InputDirectory 
+	def File inputDir
+    @OutputDirectory
+	def File outputDir
+	@Input
+    def inputProperty	
+	@Input
+	def File cuSrcDir
+	@Input
+	def FileCollection cucollection
+	@Input
+	def String nvcmdline
+    @TaskAction
+    def doNvccCompile(IncrementalTaskInputs inputs) {
+		println '<=======IN doNvccCompile()========>'		
+        println inputs.incremental ? "CHANGED inputs considered out of date"
+                                   : "ALL inputs considered out of date"
+		println "Contents of " + cuSrcDir.getAbsolutePath()
+		cucollection.collect {it}.each { 
+			println it
+			String srcfname = it
+			if (it.name.endsWith('.cu')) {
+				String ofname = it.getName()[0..-3] + '.o'
+				project.exec {
+					commandLine nvcmdline, 
+					'-ccbin','\"C:/Program Files (x86)/Microsoft Visual Studio 10.0/VC/bin\"',
+					"--machine","32","--compile", "-maxrregcount=32", 
+					'-gencode=arch=compute_35,code=\\"sm_35,compute_35\\"',
+					'-Xcompiler', '\"/EHsc /W1 /nologo /O2 /Zi  /MT  \"',	
+					'-o',outputDir.getAbsolutePath() + '//' + ofname,
+					srcfname				
+				}		
+			}
+		}
+    }
+}
+
+/*
+FileCollection collection
+
+task list {
+    File srcDir
+
+    // Create a file collection using a closure
+    collection = files { srcDir.listFiles() }
+
+    srcDir = file('src/main/cpp')
+    println "Contents of $srcDir.name"
+    collection.collect { relativePath(it) }.sort().each { println it }
+
+    srcDir = file('src/main/cuda')
+    println "Contents of $srcDir.name"
+    collection.collect { relativePath(it) }.sort().each { println it }
+}
+*/
+/*
+task nvccCompile(type:Exec) {
+//	workingDir '.'
+	def nvcmdline = cuda_home+'\\bin\\nvcc'
+	doFirst{
+		println 'Cuda path is ' + cuda_home
+		println 'working directory is ' + workingDir		
+	}
+	commandLine nvcmdline,
+	'-ccbin','\"C:/Program Files (x86)/Microsoft Visual Studio 10.0/VC/bin\"',
+	"--machine","32","--compile", "-maxrregcount=32", 
+	'-gencode=arch=compute_35,code=\\"sm_35,compute_35\\"',
+	'-Xcompiler', '\"/EHsc /W1 /nologo /O2 /Zi  /MT  \"',	
+	'-o',cuda_files+'test.o',
+	cuda_files+'test.cu'
+}
+*/

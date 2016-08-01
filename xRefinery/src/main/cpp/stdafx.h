@@ -1,8 +1,11 @@
-#pragma once
-
-#include "targetver.h"
-
-#include <Windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <tchar.h>
+#if !defined(__STDAFX_H)
+	#define __STDAFX_H 1
+	#if defined(_WIN32)
+		#include "targetver.h"
+		#include <windows.h>		
+		#include <tchar.h>
+	#endif
+	
+	#include <iostream>
+	
+#endif
