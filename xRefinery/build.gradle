@@ -23,11 +23,20 @@ model {
     toolChains {
         visualCpp(VisualCpp) {
             // Specify the installDir if Visual Studio cannot be located
-            installDir "C:/Program Files (x86)/Microsoft Visual Studio 10.0"
-			windowsSdkDir "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1A"
+			if ( project.hasProperty('vcinstallDir') )	{
+				installDir project.properties['vcinstallDir']
+			} else {
+	//            installDir "C:/Program Files (x86)/Microsoft Visual Studio 10.0"
+			}
+			if ( project.hasProperty('vcwindowsSdkDir') )	{
+				windowsSdkDir project.properties['vcwindowsSdkDir']
+			}
+			else {
+	//			windowsSdkDir "C:/Program Files (x86)/Microsoft SDKs/Windows/v7.1A"
+			}
         }
     }
-    
+   
     components {
         main(NativeExecutableSpec) {
 			targetPlatform "x86"
@@ -61,8 +70,8 @@ model {
 						cppCompiler.args '/Zi'
 						cppCompiler.define 'DEBUG'
 						linker.args '/DEBUG'
-					}								
-                }												             
+					}													
+                }									
             }
         }
     }
@@ -79,27 +88,84 @@ model {
 			}
 			binary.tasks.build.dependsOn stripTask
 		}
-	}		
+	}	
+	tasks { nvcomp ->
+		$.components.main.binaries.each { binary ->
+			def nvcompTask = binary.tasks.taskName("nvcomp")
+			nvcomp.create(nvcompTask) {
+				//dependsOn compileCuda
+				doFirst {
+					println "<<<------------nvcomp task ----------->>>"
+					println "Type " + nvcompTask
+				}
+			}
+			binary.tasks.link.dependsOn nvcompTask			
+		}
+	}							
 }
+tasks.addRule("Pattern: cucomp<ID>") { String taskName ->
+	if (   taskName.startsWith("nvcomp")
+		&& taskName.contains("Main")
+		&& taskName.contains("X86") 
+		&& taskName.contains("Release") 
+		&& taskName.contains("Executable") )  {
+		task(taskName) << {
+			println "CUCOMP: " + (taskName)
+			def nvcmdline = cuda_home+'\\bin\\nvcc'
+			def cuSrcDir = file('src/main/cuda')
+			def outputDir = file("$buildDir/objs/main/x86/release/mainCuda")
+			if ( !outputDir.exists() ) {
+				outputDir.mkdir()
+			}
+			println "***Compiling Cuda Sources at " + cuSrcDir
+			def cucollection = files { cuSrcDir.listFiles() }
+			cucollection.files.each { String thefile = it
+				if ( thefile.endsWith('.cu') ) {
+					println thefile
+				}
+			}
+			cucollection.collect {it}.each { 
+				println it
+				String srcfname = it
+				if (it.name.endsWith('.cu')) {
+					String ofname = it.getName()[0..-3] + 'obj'
+					println srcfname + '---->' + ofname
+					project.exec {
+						workingDir outputDir
+						commandLine nvcmdline, 
+						'-ccbin','\"C:/Program Files (x86)/Microsoft Visual Studio 10.0/VC/bin\"',
+						"--machine","32","--compile", "-maxrregcount=32", 
+						'-gencode=arch=compute_35,code=\\"sm_35,compute_35\\"',
+						'-Xcompiler', '\"/EHsc /W1 /nologo /O2 /Zi  /MT  \"',	
+						'-o',outputDir.getAbsolutePath() + '/' + ofname,
+						srcfname				
+					}		
+				}
+			}				
+		}
+	} //type
+	// Add other build types here
+}		//task		
 
-task nvccVersion(type:Exec) {
+
+//task nvccVersion(type:Exec) {
 //	workingDir '.'
-	def nvcmdline = cuda_home+'\\bin\\nvcc'
-	doFirst{
-		println 'Cuda path is ' + cuda_home
-		println 'working directory is ' + workingDir		
-	}
-	commandLine nvcmdline, '--version'	
-}
+//	def nvcmdline = cuda_home+'\\bin\\nvcc'
+//	doFirst{
+//		println 'Cuda path is ' + cuda_home
+//		println 'working directory is ' + workingDir		
+//	}
+//	commandLine nvcmdline, '--version'	
+//}
 
-task compileCuda(type:nvccCompile) {
-    inputDir = file(cuda_files)
-    outputDir = file("$buildDir/cuobjs")
-    inputProperty = project.properties['taskInputProperty'] ?: "original"	
-	cuSrcDir = file('src/main/cuda')
-	cucollection = files { cuSrcDir.listFiles() }
-	nvcmdline = cuda_home+'\\bin\\nvcc'		
-}
+//task compileCuda(type:nvccCompile) {
+//    inputDir = file(cuda_files)
+//    outputDir = file("$buildDir/cuobjs/")
+//    inputProperty = project.properties['taskInputProperty'] ?: "original"	
+//	cuSrcDir = file('src/main/cuda')
+//	cucollection = files { cuSrcDir.listFiles() }
+//	nvcmdline = cuda_home+'\\bin\\nvcc'		
+//}
 
 class nvccCompile extends DefaultTask {
     @InputDirectory 
