@@ -57,10 +57,31 @@ model {
 					println "===> " + targetPlatform.name + "  " + buildType.name + " <==="
 					if ( targetPlatform.name == 'x86' ) {
 //						linker.args "/LIBPATH:" + opencl_home + "/lib/Win32"
+						if (buildType == buildTypes.release) {
+							cppCompiler.args "/O2","/MT"                    
+							cppCompiler.define 'NDEBUG'
+							def cuObjDir = file("$buildDir/objs/main/x86/release/mainCuda")
+							linker.args "/LIBPATH:" + cuda_home + "/lib/Win32"
+							linker.args "cudart_static.lib"
+							linker.args "/LIBPATH:" + cuObjDir							
+							vclinkfiles.tokenize().each {
+									linker.args it
+							}
+							culinkfiles.tokenize().each {
+									linker.args it
+							}
+						}
+						if (buildType == buildTypes.debug) {
+							cppCompiler.args "/MTd"                    
+							cppCompiler.args '/Zi'
+							cppCompiler.define 'DEBUG'
+							linker.args '/DEBUG'
+						}													
 					}
 					if ( targetPlatform.name == 'x64' ) {
 //						linker.args "/LIBPATH:" + opencl_home + "/lib/x64"
 					}
+/*					
 					if (buildType == buildTypes.release) {
 						cppCompiler.args "/O2","/MT"                    
 						cppCompiler.define 'NDEBUG'
@@ -71,6 +92,7 @@ model {
 						cppCompiler.define 'DEBUG'
 						linker.args '/DEBUG'
 					}													
+*/
                 }									
             }
         }
@@ -166,7 +188,7 @@ tasks.addRule("Pattern: cucomp<ID>") { String taskName ->
 //	cucollection = files { cuSrcDir.listFiles() }
 //	nvcmdline = cuda_home+'\\bin\\nvcc'		
 //}
-
+/*
 class nvccCompile extends DefaultTask {
     @InputDirectory 
 	def File inputDir
@@ -204,7 +226,7 @@ class nvccCompile extends DefaultTask {
 		}
     }
 }
-
+*/
 /*
 FileCollection collection
 
