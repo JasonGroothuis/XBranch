@@ -33,6 +33,7 @@ __global__ void cudaAcc_GetPowerSpectrum_kernel2( int NumDataPoints, float2* Fre
 		PowerSpectrum[i+k*blockDim.x] = __fadd_rn( __fmul_rn(ax[k],ax[k]),__fmul_rn(ay[k],ay[k])); 
 	}
 }
+*/
 
 void cudaAcc_GetPowerSpectrum(int blksize, float2* dev_WorkData, float* dev_PowerSpectrum) {
     const int cudaAcc_NumDataPoints = 1024*1024;
@@ -42,6 +43,7 @@ void cudaAcc_GetPowerSpectrum(int blksize, float2* dev_WorkData, float* dev_Powe
 	cudaAcc_GetPowerSpectrum_kernel<<<grid, block>>>(cudaAcc_NumDataPoints, dev_WorkData, dev_PowerSpectrum);
 }
 
+/*
 void cudaAcc_GetPowerSpectrum2(int blksize, float2* dev_WorkData, float* dev_PowerSpectrum) {
     const int cudaAcc_NumDataPoints = 1024*1024;
 	dim3 block(blksize, 1, 1);

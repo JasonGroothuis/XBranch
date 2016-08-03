@@ -7,7 +7,7 @@ def cuda_includes = ''
 
 model {
     buildTypes {
-        debug
+//        debug
         release
     }
 
@@ -60,7 +60,8 @@ model {
 						if (buildType == buildTypes.release) {
 							cppCompiler.args "/O2","/MT"                    
 							cppCompiler.define 'NDEBUG'
-							def cuObjDir = file("$buildDir/objs/main/x86/release/mainCuda")
+//							def cuObjDir = file("$buildDir/objs/main/x86/release/mainCuda")
+							def cuObjDir = file("$buildDir/objs/main/x86/mainCuda")
 							linker.args "/LIBPATH:" + cuda_home + "/lib/Win32"
 							linker.args "cudart_static.lib"
 							linker.args "/LIBPATH:" + cuObjDir							
@@ -71,29 +72,42 @@ model {
 									linker.args it
 							}
 						}
+/*
 						if (buildType == buildTypes.debug) {
 							cppCompiler.args "/MTd"                    
 							cppCompiler.args '/Zi'
 							cppCompiler.define 'DEBUG'
 							linker.args '/DEBUG'
 						}													
+*/
 					}
 					if ( targetPlatform.name == 'x64' ) {
 //						linker.args "/LIBPATH:" + opencl_home + "/lib/x64"
-					}
-/*					
-					if (buildType == buildTypes.release) {
-						cppCompiler.args "/O2","/MT"                    
-						cppCompiler.define 'NDEBUG'
-					}
-					if (buildType == buildTypes.debug) {
-						cppCompiler.args "/MTd"                    
-						cppCompiler.args '/Zi'
-						cppCompiler.define 'DEBUG'
-						linker.args '/DEBUG'
-					}													
+						if (buildType == buildTypes.release) {
+							cppCompiler.args "/O2","/MT"                    
+							cppCompiler.define 'NDEBUG'
+//							def cuObjDir = file("$buildDir/objs/main/x64/release/mainCuda")
+							def cuObjDir = file("$buildDir/objs/main/x64/mainCuda")
+							linker.args "/LIBPATH:" + cuda_home + "/lib/x64"
+							linker.args "cudart_static.lib"
+							linker.args "/LIBPATH:" + cuObjDir							
+							vclinkfiles.tokenize().each {
+									linker.args it
+							}
+							culinkfiles.tokenize().each {
+									linker.args it
+							}
+						}
+/*
+						if (buildType == buildTypes.debug) {
+							cppCompiler.args "/MTd"                    
+							cppCompiler.args '/Zi'
+							cppCompiler.define 'DEBUG'
+							linker.args '/DEBUG'
+						}													
 */
-                }									
+					}
+				}									
             }
         }
     }
@@ -126,16 +140,18 @@ model {
 	}							
 }
 tasks.addRule("Pattern: cucomp<ID>") { String taskName ->
+
 	if (   taskName.startsWith("nvcomp")
 		&& taskName.contains("Main")
 		&& taskName.contains("X86") 
-		&& taskName.contains("Release") 
 		&& taskName.contains("Executable") )  {
+//		&& taskName.contains("Release") 
 		task(taskName) << {
 			println "CUCOMP: " + (taskName)
 			def nvcmdline = cuda_home+'\\bin\\nvcc'
 			def cuSrcDir = file('src/main/cuda')
-			def outputDir = file("$buildDir/objs/main/x86/release/mainCuda")
+//			def outputDir = file("$buildDir/objs/main/x86/release/mainCuda")
+			def outputDir = file("$buildDir/objs/main/x86/mainCuda")
 			if ( !outputDir.exists() ) {
 				outputDir.mkdir()
 			}
@@ -166,6 +182,49 @@ tasks.addRule("Pattern: cucomp<ID>") { String taskName ->
 			}				
 		}
 	} //type
+	else if (   taskName.startsWith("nvcomp")
+		&& taskName.contains("Main")
+		&& taskName.contains("X64") 
+		&& taskName.contains("Executable") )  {
+//		&& taskName.contains("Release") 
+		task(taskName) << {
+			println "CUCOMP: " + (taskName)
+			def nvcmdline = cuda_home+'\\bin\\nvcc'
+			def cuSrcDir = file('src/main/cuda')
+//			def outputDir = file("$buildDir/objs/main/x64/release/mainCuda")
+			def outputDir = file("$buildDir/objs/main/x64/mainCuda")
+			if ( !outputDir.exists() ) {
+				outputDir.mkdir()
+			}
+			println "***Compiling Cuda Sources at " + cuSrcDir
+			def cucollection = files { cuSrcDir.listFiles() }
+			cucollection.files.each { String thefile = it
+				if ( thefile.endsWith('.cu') ) {
+					println thefile
+				}
+			}
+			cucollection.collect {it}.each { 
+				println it
+				String srcfname = it
+				if (it.name.endsWith('.cu')) {
+					String ofname = it.getName()[0..-3] + 'obj'
+					println srcfname + '---->' + ofname
+					
+					project.exec {
+						workingDir outputDir
+						commandLine nvcmdline, 
+						'-ccbin','\"C:/Program Files (x86)/Microsoft Visual Studio 10.0/VC/bin\"',
+						"--machine","64","--compile", "-maxrregcount=32", 
+						'-gencode=arch=compute_35,code=\\"sm_35,compute_35\\"',
+						'-Xcompiler', '\"/EHsc /W1 /nologo /O2 /Zi  /MT  \"',	
+						'-o',outputDir.getAbsolutePath() + '/' + ofname,
+						srcfname				
+					}					
+				}
+			}				
+		}
+	} //type
+	
 	// Add other build types here
 }		//task		
 
